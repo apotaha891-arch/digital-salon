@@ -23,12 +23,21 @@ DROP POLICY IF EXISTS "Users manage own profile" ON public.profiles;
 CREATE POLICY "Users manage own profile" ON public.profiles
   FOR ALL USING (auth.uid() = id);
 
--- Allow admins to read all profiles (needed for admin panel)
+-- Helper function to check admin status without recursion
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Allow admins to read all profiles
 DROP POLICY IF EXISTS "Admins read all profiles" ON public.profiles;
 CREATE POLICY "Admins read all profiles" ON public.profiles
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  );
+  FOR SELECT USING (public.is_admin());
 
 
 -- ============================================
