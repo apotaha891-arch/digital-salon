@@ -105,9 +105,10 @@ CREATE POLICY "Users view own ledger" ON public.wallet_ledger
 
 -- ============================================
 -- 5. BOOKINGS (Unified V3 — AI-Actionable)
---    Replaces both the old simple + advanced versions.
+--    DROP old table first to remove schema conflicts.
 -- ============================================
-CREATE TABLE IF NOT EXISTS public.bookings (
+DROP TABLE IF EXISTS public.bookings CASCADE;
+CREATE TABLE public.bookings (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- Salon owner
   client_name      TEXT NOT NULL,
