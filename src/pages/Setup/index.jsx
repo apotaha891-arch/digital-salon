@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Save, Loader2, CloudLightning, Home, Briefcase, User, Plug } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useBusiness } from '../../hooks/useBusiness';
@@ -25,18 +25,34 @@ export default function Setup() {
   const [activeTab, setActiveTab] = useState('sources');
   const [success, setSuccess] = useState('');
 
-  // Hooks for state & actions
+  // 1. Hook for persistent data
   const { business, loading: bLoading, updateBusiness, saving: bSaving } = useBusiness(user?.id);
   const { agent, loading: aLoading, updateAgent, saving: aSaving } = useAgent(user?.id);
   const { activeToolsMap, loading: iLoading, updateIntegration } = useIntegrations(user?.id);
+
+  // 2. Local state for editing (Drafts)
+  const [localBusiness, setLocalBusiness] = useState(null);
+  const [localAgent, setLocalAgent] = useState(null);
+
+  // Sync local state when hook data loads
+  useEffect(() => {
+    if (business && !localBusiness) setLocalBusiness(business);
+  }, [business, localBusiness]);
+
+  useEffect(() => {
+    if (agent && !localAgent) setLocalAgent(agent);
+  }, [agent, localAgent]);
 
   const loading = bLoading || aLoading || iLoading;
   const saving = bSaving || aSaving;
 
   const handleGlobalSave = async () => {
     try {
-      if (activeTab === 'persona') await updateAgent(agent);
-      else if (activeTab === 'business' || activeTab === 'services') await updateBusiness(business);
+      if (activeTab === 'persona') {
+        await updateAgent(localAgent);
+      } else if (activeTab === 'business' || activeTab === 'services') {
+        await updateBusiness(localBusiness);
+      }
       
       setSuccess('تم حفظ التعديلات بنجاح ✨');
       setTimeout(() => setSuccess(''), 3000);
@@ -45,7 +61,7 @@ export default function Setup() {
     }
   };
 
-  if (loading) return <Spinner centered />;
+  if (loading || !localBusiness || !localAgent) return <Spinner centered />;
 
   return (
     <div className="fade-in" style={{ paddingBottom: 60 }}>
@@ -84,24 +100,22 @@ export default function Setup() {
         
         {activeTab === 'business' && (
           <BusinessTab 
-            business={business} 
-            onUpdate={data => updateBusiness(data)} // Updates local state via hook if we want sync, but here we update the whole object
-            // To make it feel fast, we should probably handle local state in hook.
-            // For now, let's keep it simple.
+            business={localBusiness} 
+            onUpdate={setLocalBusiness} 
           />
         )}
 
         {activeTab === 'services' && (
           <ServicesTab 
-            services={business?.services || []} 
-            onUpdate={services => updateBusiness({ ...business, services })} 
+            services={localBusiness.services || []} 
+            onUpdate={services => setLocalBusiness({ ...localBusiness, services })} 
           />
         )}
 
         {activeTab === 'persona' && (
           <PersonaTab 
-            agent={agent} 
-            onUpdate={data => updateAgent(data)} 
+            agent={localAgent} 
+            onUpdate={setLocalAgent} 
           />
         )}
 

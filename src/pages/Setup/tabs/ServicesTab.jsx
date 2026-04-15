@@ -24,8 +24,8 @@ export default function ServicesTab({ services, onUpdate }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {services.map((s) => (
-          <div key={s.id} className="glass-card" style={{ 
+        {services.map((s, index) => (
+          <div key={s.id || `temp-${index}`} className="glass-card" style={{ 
             padding: '20px 24px', 
             display: 'grid', 
             gridTemplateColumns: '2fr 1fr 1fr 60px', 
