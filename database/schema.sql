@@ -315,6 +315,29 @@ BEGIN
   VALUES (p_user_id, p_amount, p_reason);
 END;$$;
 
+-- Check if wallet has sufficient funds
+CREATE OR REPLACE FUNCTION public.check_wallet_balance(p_user_id UUID, p_required INT)
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.wallets 
+    WHERE user_id = p_user_id AND balance >= p_required
+  );
+END;$$;
+
+-- Deduct tokens for AI message
+CREATE OR REPLACE FUNCTION public.deduct_tokens(p_user_id UUID, p_amount INT, p_reason TEXT)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE public.wallets 
+  SET balance = balance - p_amount,
+      updated_at = NOW()
+  WHERE user_id = p_user_id;
+
+  INSERT INTO public.wallet_ledger (user_id, amount, reason)
+  VALUES (p_user_id, -p_amount, p_reason);
+END;$$;
+
 
 -- ============================================
 -- 11. AI CORE FUNCTIONS
