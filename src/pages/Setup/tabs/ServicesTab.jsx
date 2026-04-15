@@ -3,7 +3,8 @@ import { Plus, Trash2, Clock } from 'lucide-react';
 
 export default function ServicesTab({ services, onUpdate }) {
   const addService = () => {
-    onUpdate([...services, { id: Date.now().toString(), name: '', price: '', duration: '' }]);
+    const newId = Math.random().toString(36).substr(2, 9);
+    onUpdate([...services, { id: newId, name: '', price: '', duration: '' }]);
   };
 
   const removeService = (id) => {
@@ -11,7 +12,11 @@ export default function ServicesTab({ services, onUpdate }) {
   };
 
   const updateServiceValue = (id, field, value) => {
-    onUpdate(services.map(s => s.id === id ? { ...s, [field]: value } : s));
+    // Only update the specific row by ID. If ID is missing, we use index as fallback.
+    onUpdate(services.map((s, idx) => {
+      const match = s.id ? s.id === id : `temp-${idx}` === id;
+      return match ? { ...s, [field]: value } : s;
+    }));
   };
 
   return (
@@ -35,14 +40,14 @@ export default function ServicesTab({ services, onUpdate }) {
           }}>
             <input 
               className="form-input neon-input" 
-              value={s.name} 
-              onChange={e => updateServiceValue(s.id, 'name', e.target.value)} 
+              value={s.name || ''} 
+              onChange={e => updateServiceValue(s.id || `temp-${index}`, 'name', e.target.value)} 
               placeholder="اسم الخدمة..." 
             />
             <input 
               className="form-input neon-input" 
-              value={s.price} 
-              onChange={e => updateServiceValue(s.id, 'price', e.target.value)} 
+              value={s.price || ''} 
+              onChange={e => updateServiceValue(s.id || `temp-${index}`, 'price', e.target.value)} 
               placeholder="السعر (ر.س)" 
             />
             <div style={{ position: 'relative' }}>
@@ -56,8 +61,8 @@ export default function ServicesTab({ services, onUpdate }) {
               <input 
                 className="form-input neon-input" 
                 style={{ paddingRight: 40 }} 
-                value={s.duration} 
-                onChange={e => updateServiceValue(s.id, 'duration', e.target.value)} 
+                value={s.duration || ''} 
+                onChange={e => updateServiceValue(s.id || `temp-${index}`, 'duration', e.target.value)} 
                 placeholder="المدة..." 
               />
             </div>
