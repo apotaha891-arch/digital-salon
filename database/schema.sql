@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS public.agents (
   avatar           TEXT DEFAULT '💅',
   instructions     TEXT DEFAULT '',
   is_active        BOOLEAN DEFAULT false,
-  model_provider   TEXT DEFAULT 'openai', -- 'openai' | 'gemini'
+  model_provider   TEXT DEFAULT 'gemini', -- 'openai' | 'gemini'
   messages_today   INT DEFAULT 0,
   bookings_today   INT DEFAULT 0,
   total_messages   INT DEFAULT 0,
@@ -238,9 +238,9 @@ BEGIN
   INSERT INTO public.wallet_ledger (user_id, amount, reason)
   VALUES (NEW.id, 100, 'الرصيد المجاني للترحيب 🎁');
 
-  -- Create default agent
+  -- Create default agent (Gemini is default — cheaper + no card needed)
   INSERT INTO public.agents (user_id, name, avatar, model_provider)
-  VALUES (NEW.id, 'لين', '💅', 'openai')
+  VALUES (NEW.id, 'لين', '💅', 'gemini')
   ON CONFLICT (user_id) DO NOTHING;
 
   RETURN NEW;
