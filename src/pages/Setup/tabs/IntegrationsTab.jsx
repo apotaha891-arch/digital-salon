@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   HelpCircle, X, Check, Copy, Send, MessageCircle, Globe 
 } from 'lucide-react';
@@ -15,7 +15,8 @@ const INTEGRATION_TOOLS = [
       'أرسل الأمر /newbot ثم اختر اسماً ومُعرفاً (Username) لموظفتك.',
       'انسخ الـ API Token الذي سيظهر لك وقم بلصقه في الخانة المخصصة هنا.',
       'اذهب إلى Bot Settings ثم Group Privacy وقم بتعطيله (Disabled) لتتمكن الموظفة من قراءة الرسائل.'
-    ]
+    ],
+    checkLink: (conf) => !!conf.token
   },
   {
     id: 'whatsapp',
@@ -30,7 +31,8 @@ const INTEGRATION_TOOLS = [
       'قم بإنشاء حساب مطورين في Meta for Developers.',
       'أنشئ تطبيقاً من نوع Business واضف Whatsapp كمنتج أساسي.',
       'احصل على مفتاح الوصول الدائم (Permanent Access Token) ومعرف الهاتف من لوحة التحكم.'
-    ]
+    ],
+    checkLink: (conf) => !!conf.token && !!conf.phone_id
   },
   {
     id: 'widget',
@@ -46,13 +48,20 @@ const INTEGRATION_TOOLS = [
       'أدخل رابط موقعك الإلكتروني لضمان أن الويدجت سيعمل فقط على نطاقك المعتمد.',
       'اختر لون الهوية (Theme Color) ورسالة الترحيب التي تعبر عن صالونك.',
       'اضغط على "حفظ وتوليد الكود" للحصول على كود الربط.'
-    ]
+    ],
+    checkLink: (conf) => !!conf.domain
   }
 ];
 
 export default function IntegrationsTab({ activeTools, agentId, agentName, onToolSave }) {
   const [showGuide, setShowGuide] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [localConfigs, setLocalConfigs] = useState(activeTools || {});
+
+  // Sync local configs with activeTools from props
+  useEffect(() => {
+    setLocalConfigs(activeTools);
+  }, [activeTools]);
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -60,16 +69,24 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleFieldChange = (toolId, field, value) => {
+    const newConfig = { ...localConfigs[toolId], [field]: value };
+    setLocalConfigs(prev => ({ ...prev, [toolId]: newConfig }));
+    onToolSave(toolId, newConfig);
+  };
+
   const currentTool = INTEGRATION_TOOLS.find(t => t.id === showGuide);
-  const widgetConfig = activeTools.widget || {};
+  const widgetConfig = localConfigs.widget || {};
+  const isWidgetLinked = !!widgetConfig.domain;
+
   const embedCode = `<script \n  src="https://24shift.solutions/widget.js"\n  data-agent-id="${agentId || '...'}"\n  data-name="${agentName || 'Salon'}"\n  data-welcome="${widgetConfig.welcome_message || 'Hello!'}"\n  data-color="${widgetConfig.theme_color || '#D946EF'}"\n></script>`;
 
   return (
     <div className="fade-in">
       <div className="integration-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
         {INTEGRATION_TOOLS.map((tool) => {
-          const config = activeTools[tool.id] || {};
-          const isLinked = !!config.token || !!config.domain || !!config.phone_id;
+          const config = localConfigs[tool.id] || {};
+          const isLinked = tool.checkLink(config);
           
           return (
             <div key={tool.id} className="glass-card" style={{ padding: 24, textAlign: 'right' }}>
@@ -88,13 +105,21 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
               <h4 style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>{tool.name}</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
                 {tool.fields.map(field => (
-                  <div key={field.name}>
+                  <div key={`${tool.id}-${field.name}`}>
                     <input 
                       type={field.type || 'text'} 
                       className="form-input neon-input" 
-                      defaultValue={config[field.name]} 
+                      value={config[field.name] || ''} 
                       placeholder={field.label} 
                       style={{ fontSize: 12, height: 40 }} 
+                      onChange={(e) => {
+                        // Change local state but only trigger onBlur for DB
+                        const val = e.target.value;
+                        setLocalConfigs(prev => ({
+                          ...prev,
+                          [tool.id]: { ...prev[tool.id], [field.name]: val }
+                        }));
+                      }}
                       onBlur={(e) => onToolSave(tool.id, { ...config, [field.name]: e.target.value })} 
                     />
                   </div>
@@ -126,7 +151,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
               <button onClick={() => setShowGuide(null)} className="btn-icon"><X size={20} /></button>
             </div>
             <div style={{ padding: 32 }}>
-               {currentTool.id === 'widget' && !!widgetConfig.domain ? (
+               {currentTool.id === 'widget' && isWidgetLinked ? (
                  <div className="code-box" style={{ marginBottom: 24, position: 'relative' }}>
                     <button 
                       className={`copy-btn ${copied ? 'copied' : ''}`} 
