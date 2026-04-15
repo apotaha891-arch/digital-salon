@@ -1,118 +1,84 @@
-import { useState, useEffect } from 'react';
-import { adminGetAllClients, adminAddCredits, adminToggleClient } from '../../services/supabase';
-import { Search, Plus, Ban, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { useAdmin } from '../../hooks/useAdmin';
+import { User, CreditCard, Power, Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import Spinner from '../../components/ui/Spinner';
+import Badge from '../../components/ui/Badge';
+import Modal from '../../components/ui/Modal';
 
 export default function AdminClients() {
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [addCreditsModal, setAddCreditsModal] = useState(null);
-  const [creditAmount, setCreditAmount] = useState(500);
+  const { clients, loading, addCredits, toggleClientStatus } = useAdmin();
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [creditAmount, setCreditAmount] = useState(100);
   const [saving, setSaving] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
-    try { setClients(await adminGetAllClients()); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const filtered = clients.filter(c =>
-    (c.full_name || '').includes(search) || (c.email || '').includes(search)
-  );
-
   const handleAddCredits = async () => {
-    if (!addCreditsModal) return;
+    if (!selectedClient) return;
     setSaving(true);
     try {
-      await adminAddCredits(addCreditsModal.id, creditAmount);
-      await load();
-      setAddCreditsModal(null);
-    } catch (e) { alert(e.message); }
-    finally { setSaving(false); }
+      await addCredits(selectedClient.id, creditAmount, 'شحن رصيد من الإدارة');
+      setSelectedClient(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleToggle = async (client) => {
-    try {
-      await adminToggleClient(client.id, !client.is_active);
-      await load();
-    } catch (e) { alert(e.message); }
-  };
-
-  if (loading) return <div className="loading-center"><div className="spinner" /></div>;
+  if (loading) return <Spinner centered />;
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-        <div className="page-header" style={{ marginBottom: 0 }}>
-          <h1 className="page-title">إدارة العملاء 👥</h1>
-          <p className="page-subtitle">{clients.length} عميل مسجل في المنصة</p>
-        </div>
+    <div className="fade-in">
+      <div className="page-header">
+        <h1 className="page-title">إدارة العملاء</h1>
+        <p className="page-subtitle">قائمة بجميع الصالونات المسجلة في المنصة</p>
       </div>
 
-      {/* Search */}
-      <div style={{ position: 'relative', marginBottom: 24 }}>
-        <Search size={16} style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-        <input className="form-input" style={{ paddingRight: 44 }}
-          placeholder="ابحث باسم العميل أو البريد..."
-          value={search} onChange={e => setSearch(e.target.value)} />
-      </div>
-
-      {/* Table */}
-      <div className="table-wrap">
-        <table>
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 24 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
           <thead>
-            <tr>
-              <th>العميل</th>
-              <th>الموظفة</th>
-              <th>الرصيد</th>
-              <th>الحالة</th>
-              <th>الإجراءات</th>
+            <tr style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)' }}>
+              <th style={{ padding: '16px 24px' }}>العميل</th>
+              <th style={{ padding: '16px 24px' }}>التفاصيل</th>
+              <th style={{ padding: '16px 24px' }}>الرصيد</th>
+              <th style={{ padding: '16px 24px' }}>الموظفة</th>
+              <th style={{ padding: '16px 24px' }}>الإجراءات</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map(c => (
-              <tr key={c.id}>
-                <td>
-                  <div style={{ fontWeight: 600 }}>{c.full_name || '—'}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.email}</div>
+            {clients.map(client => (
+              <tr key={client.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <td style={{ padding: '16px 24px' }}>
+                  <div style={{ fontWeight: 700 }}>{client.full_name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{client.email}</div>
                 </td>
-                <td>
-                  <div>{c.agent_name || '—'}</div>
-                  {c.agent_active !== null && (
-                    <span className={`badge ${c.agent_active ? 'badge-active' : 'badge-inactive'}`} style={{ fontSize: 11 }}>
-                      {c.agent_active ? 'نشطة' : 'متوقفة'}
-                    </span>
-                  )}
+                <td style={{ padding: '16px 24px' }}>
+                  <Badge variant={client.is_active ? 'success' : 'inactive'} size="sm">
+                    {client.is_active ? 'نشط' : 'معطل'}
+                  </Badge>
                 </td>
-                <td>
-                  <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: 16 }}>
-                    {c.wallet_balance ?? 0}
-                  </span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}> توكن</span>
+                <td style={{ padding: '16px 24px' }}>
+                  <div style={{ fontWeight: 900, color: 'var(--success)' }}>{client.wallet_balance} توكن</div>
                 </td>
-                <td>
-                  <span className={`badge ${c.is_active ? 'badge-active' : 'badge-inactive'}`}>
-                    {c.is_active ? 'نشط' : 'موقوف'}
-                  </span>
+                <td style={{ padding: '16px 24px' }}>
+                  <div style={{ fontSize: 13 }}>{client.agent_name || 'لم تنشأ'}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                    {client.agent_active ? 'متصلة' : 'منقطعة'}
+                  </div>
                 </td>
-                <td>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      className="btn btn-sm"
-                      style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--success)', border: '1px solid rgba(16,185,129,0.3)' }}
-                      onClick={() => { setAddCreditsModal(c); setCreditAmount(500); }}>
-                      <Plus size={13} /> رصيد
+                <td style={{ padding: '16px 24px' }}>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button 
+                      className="btn btn-secondary btn-sm" 
+                      onClick={() => setSelectedClient(client)}
+                    >
+                      <Plus size={14} style={{ marginLeft: 4 }} /> شحن
                     </button>
-                    <button
-                      className="btn btn-sm"
-                      style={{ background: c.is_active ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-                        color: c.is_active ? 'var(--error)' : 'var(--success)',
-                        border: `1px solid ${c.is_active ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}` }}
-                      onClick={() => handleToggle(c)}>
-                      {c.is_active ? <Ban size={13} /> : <CheckCircle size={13} />}
-                      {c.is_active ? 'إيقاف' : 'تفعيل'}
+                    <button 
+                      className={`btn-icon ${client.is_active ? 'text-error' : 'text-success'}`}
+                      style={{ color: client.is_active ? 'var(--error)' : 'var(--success)' }}
+                      onClick={() => toggleClientStatus(client.id, !client.is_active)}
+                    >
+                      <Power size={18} />
                     </button>
                   </div>
                 </td>
@@ -122,31 +88,32 @@ export default function AdminClients() {
         </table>
       </div>
 
-      {/* Add Credits Modal */}
-      {addCreditsModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20
-        }}>
-          <div className="card" style={{ width: '100%', maxWidth: 400 }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 4 }}>إضافة رصيد</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 24 }}>
-              للعميل: {addCreditsModal.full_name || addCreditsModal.email}
-            </p>
-            <div className="form-group">
-              <label className="form-label">عدد التوكنات</label>
-              <input type="number" className="form-input" value={creditAmount}
-                onChange={e => setCreditAmount(Number(e.target.value))} min={1} />
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button className="btn btn-secondary" onClick={() => setAddCreditsModal(null)}>إلغاء</button>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleAddCredits} disabled={saving}>
-                {saving ? 'جاري الإضافة...' : `إضافة ${creditAmount} توكن`}
-              </button>
-            </div>
+      {/* Credit Modal */}
+      <Modal 
+        isOpen={!!selectedClient} 
+        onClose={() => setSelectedClient(null)} 
+        title={`إضافة رصيد لـ ${selectedClient?.full_name}`}
+        maxWidth={400}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div className="form-group">
+            <label className="form-label">المبلغ (توكن)</label>
+            <input 
+              type="number" 
+              className="form-input neon-input" 
+              value={creditAmount} 
+              onChange={e => setCreditAmount(parseInt(e.target.value))} 
+            />
           </div>
+          <button 
+            className="btn btn-primary btn-full" 
+            onClick={handleAddCredits}
+            disabled={saving}
+          >
+            {saving ? <Spinner size={16} /> : 'تأكيد الإضافة'}
+          </button>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
