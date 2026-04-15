@@ -10,8 +10,8 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    Deno.env.get('SB_URL') ?? '',
+    Deno.env.get('SB_KEY') ?? ''
   )
 
   try {
@@ -55,11 +55,11 @@ serve(async (req) => {
 
     // 3. Call Messenger logic (External call to existing Edge Function)
     // We can just call the messenger logic directly by passing the data
-    const messengerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/messenger`
+    const messengerUrl = `${Deno.env.get('SB_URL')}/functions/v1/messenger`
     const res = await fetch(messengerUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Authorization': `Bearer ${Deno.env.get('SB_KEY')}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

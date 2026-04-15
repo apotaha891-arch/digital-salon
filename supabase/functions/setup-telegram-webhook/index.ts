@@ -19,7 +19,7 @@ serve(async (req) => {
     if (!token) return new Response('Skipped: no token')
 
     // Construct the webhook URL
-    const projectUrl = Deno.env.get('SUPABASE_URL')
+    const projectUrl = Deno.env.get('SB_URL')
     const webhookUrl = `${projectUrl}/functions/v1/telegram-webhook?token=${token}`
 
     console.log(`Setting up Telegram Webhook for bot: ${token.substring(0, 10)}...`)
