@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { serve } from "std/http/server"
+import { createClient } from "supabase"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,8 +10,8 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   const supabase = createClient(
-    (Deno as any).env.get('SUPABASE_URL') ?? '',
-    (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   )
 
   try {
@@ -71,8 +71,8 @@ serve(async (req: Request) => {
 
     // 3. Call Brain (Messenger)
     console.log('Calling AI Brain via Fetch...')
-    const messengerUrl = `${(Deno as any).env.get('SUPABASE_URL')}/functions/v1/messenger`
-    // @ts-ignore
+    const messengerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/messenger`
+    // deno-lint-ignore no-explicit-any
     const serviceRoleKey = (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY')
     
     const res = await fetch(messengerUrl, {
@@ -121,10 +121,11 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } })
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('--- Webhook Error ---')
-    console.error(error.message)
-    return new Response(JSON.stringify({ error: error.message }), { status: 200 }) // Return 200 to stop Telegram retries
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error(errorMessage)
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 200 })
   }
 })
 
