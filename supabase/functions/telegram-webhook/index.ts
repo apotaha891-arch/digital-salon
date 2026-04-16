@@ -20,17 +20,20 @@ serve(async (req) => {
     if (!token) throw new Error('Bot token missing in URL')
 
     const update = await req.json()
-    console.log('Received Telegram update:', update)
+    console.log('--- New Telegram Update ---')
+    console.log('Update ID:', update.update_id)
+    console.log('From:', update.message?.from?.username || 'unknown')
 
-    // Handle incoming message
     if (!update.message || !update.message.text) {
+      console.log('Skipping: No message text found')
       return new Response('ok') 
     }
 
     const chatId = update.message.chat.id
     const userMessage = update.message.text
+    console.log('Message:', userMessage)
 
-    // 1. Identify Salon Owner by token
+    // 1. Identify Salon Owner
     const { data: integration, error: intError } = await supabase
       .from('integrations')
       .select('user_id')
@@ -38,23 +41,28 @@ serve(async (req) => {
       .filter('config->>token', 'eq', token)
       .single()
 
-    if (intError || !integration) throw new Error('Link between token and user not found in database')
+    if (intError || !integration) {
+      console.error('Owner not found for token:', token.substring(0, 10))
+      throw new Error('Link between token and user not found')
+    }
 
     const userId = integration.user_id
+    console.log('User ID Identified:', userId)
 
-    // 2. Check Wallet Balance (at least 1 token)
+    // 2. Check Wallet
     const { data: hasFunds } = await supabase.rpc('check_wallet_balance', { 
       p_user_id: userId, 
       p_required: 1 
     })
 
     if (!hasFunds) {
+      console.log('Wallet empty for user:', userId)
       await sendTelegramMessage(token, chatId, "عذراً، الرصيد في حساب الصالون غير كافٍ للرد على استفسارك حالياً. يرجى التواصل مع الإدارة.")
       return new Response('ok')
     }
 
-    // 3. Call Messenger logic (External call to existing Edge Function)
-    // We can just call the messenger logic directly by passing the data
+    // 3. Call Brain (Messenger)
+    console.log('Calling AI Brain...')
     const messengerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/messenger`
     const res = await fetch(messengerUrl, {
       method: 'POST',
@@ -70,32 +78,46 @@ serve(async (req) => {
       })
     })
 
+    if (!res.ok) {
+      const errText = await res.text()
+      console.error('Brain Error:', errText)
+      throw new Error(`Messenger error: ${errText}`)
+    }
+
     const { response: aiResponse } = await res.json()
+    console.log('AI Response:', aiResponse)
 
     if (aiResponse) {
-      // 4. Send response back to Telegram
+      // 4. Send Message back
       await sendTelegramMessage(token, chatId, aiResponse)
+      console.log('Message sent back to Telegram.')
 
       // 5. Deduct token
       await supabase.rpc('deduct_tokens', {
         p_user_id: userId,
         p_amount: 1,
-        p_reason: 'رد ذكاء اصطناعي (تيلقرام)'
+        p_reason: 'رد ذكاء اصطناعي (تيلقرام - Gemini 3)'
       })
+      console.log('Token deducted.')
     }
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } })
 
   } catch (error) {
-    console.error('Telegram Webhook Error:', error.message)
-    return new Response(JSON.stringify({ error: error.message }), { status: 400 })
+    console.error('--- Webhook Error ---')
+    console.error(error.message)
+    return new Response(JSON.stringify({ error: error.message }), { status: 200 }) // Return 200 to stop Telegram retries
   }
 })
 
 async function sendTelegramMessage(token: string, chatId: number, text: string) {
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text })
   })
+  if (!res.ok) {
+     const data = await res.json()
+     console.error('Telegram API Error:', data)
+  }
 }

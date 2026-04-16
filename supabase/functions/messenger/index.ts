@@ -7,213 +7,180 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  )
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
     const { platform, external_id, message, userId } = await req.json()
-
     if (!platform || !external_id || !message || !userId) {
-      throw new Error('Missing required fields: platform, external_id, message, userId')
+      throw new Error('Missing fields: platform, external_id, message, userId')
     }
 
-    // ============================================================
-    // STEP 1: Load Agent & Business Knowledge
-    // ============================================================
-    const [{ data: agent }, { data: business }] = await Promise.all([
-      supabase.from('agents').select('*').eq('user_id', userId).single(),
-      supabase.from('businesses').select('*').eq('user_id', userId).single(),
-    ])
+    // 1. Get Agent & Business Context
+    const { data: context, error: ctxError } = await supabase.rpc('get_agent_full_context', { p_user_id: userId })
+    if (ctxError || !context) throw new Error('Could not load agent context')
 
-    if (!agent) throw new Error('Agent not found for this user')
-    if (!agent.is_active) {
-      return new Response(
-        JSON.stringify({ response: null, skipped: true, reason: 'Agent is inactive' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const agent = context.agent
+    const business = context.business
+    const services = context.services
 
-    // ============================================================
-    // STEP 2: Get or Create Conversation (Memory)
-    // ============================================================
-    const { data: conversation, error: convError } = await supabase
+    // 2. Load History
+    const { data: history } = await supabase.rpc('get_conversation_history', {
+      p_user_id: userId,
+      p_external_id: external_id,
+      p_platform: platform
+    })
+
+    // 3. Save User Message
+    const { data: conversation } = await supabase
       .from('conversations')
-      .upsert(
-        { user_id: userId, external_id, platform, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id,external_id,platform' }
-      )
-      .select()
-      .single()
+      .upsert({ user_id: userId, external_id, platform }, { onConflict: 'user_id,external_id,platform' })
+      .select().single()
 
-    if (convError) throw convError
+    await supabase.from('messages').insert({ conversation_id: conversation.id, role: 'user', content: message })
 
-    // ============================================================
-    // STEP 3: Load Recent Conversation History (Context Window)
-    // ============================================================
-    const { data: history } = await supabase
-      .from('messages')
-      .select('role, content')
-      .eq('conversation_id', conversation.id)
-      .order('created_at', { ascending: false })
-      .limit(20)
+    // 4. Define Tools (The Agent Handler)
+    const tools = [
+      {
+        function_declarations: [
+          {
+            name: "get_day_bookings",
+            description: "تحقق من جميع الحجوزات الموجودة في يوم معين لمعرفة الأوقات المزدحمة.",
+            parameters: {
+              type: "object",
+              properties: {
+                date: { type: "string", description: "التاريخ المطلوب (YYYY-MM-DD)" }
+              },
+              required: ["date"]
+            }
+          },
+          {
+            name: "check_availability",
+            description: "تحقق مما إذا كان وقت محدد متاحاً للحجز.",
+            parameters: {
+              type: "object",
+              properties: {
+                date: { type: "string", description: "التاريخ (YYYY-MM-DD)" },
+                time: { type: "string", description: "الوقت (HH:MM)" }
+              },
+              required: ["date", "time"]
+            }
+          },
+          {
+            name: "create_booking",
+            description: "تسجيل حجز جديد في قاعدة البيانات بعد التأكد من توفر الموعد.",
+            parameters: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "اسم العميلة" },
+                phone: { type: "string", description: "رقم هاتف العميلة" },
+                service: { type: "string", description: "اسم الخدمة المطلوبة" },
+                date: { type: "string", description: "التاريخ (YYYY-MM-DD)" },
+                time: { type: "string", description: "الوقت (HH:MM)" }
+              },
+              required: ["name", "phone", "service", "date", "time"]
+            }
+          }
+        ]
+      }
+    ]
 
-    // Reverse to get chronological order (oldest first)
-    const previousMessages = (history || []).reverse()
+    // 5. Build System Prompt
+    const systemPrompt = `أنتِ "${agent.name}"، موظفة استقبال رقمية محترفة في صالون "${business.name}".
+اليوم هو ${new Date().toLocaleDateString('ar-SA')}.
 
-    // ============================================================
-    // STEP 4: Save the incoming user message
-    // ============================================================
-    await supabase.from('messages').insert({
-      conversation_id: conversation.id,
-      role: 'user',
-      content: message,
-    })
+مهامك:
+1. الرد على استفسارات العملاء بلباقة.
+2. استخدام الأدوات (Tools) للتحقق من المواعيد المتاحة قبل تأكيد أي حجز.
+3. إذا كان الموعد مشغولاً، اقترحي مواعيد أخرى بناءً على نتيجة get_day_bookings.
+4. لا تؤكدي أي حجز إلا عبر أداة create_booking.
 
-    // ============================================================
-    // STEP 5: Build System Prompt (The Agent's Soul)
-    // ============================================================
-    const servicesList = Array.isArray(business?.services)
-      ? business.services.map((s: any) =>
-          typeof s === 'object'
-            ? `• ${s.name} — ${s.price} ر.س (${s.duration})`
-            : `• ${s}`
-        ).join('\n')
-      : 'لا توجد خدمات محددة حتى الآن'
+الخدمات: ${JSON.stringify(services)}`
 
-    const systemPrompt = `أنتِ "${agent.name}"، موظفة استقبال رقمية محترفة ولبقة تعملين في صالون "${business?.name || 'الصالون'}".
+    // 6. Call Gemini 3 with Tool Support
+    const aiResponse = await callGemini3(systemPrompt, history || [], message, tools, userId, supabase)
 
-معلومات الصالون:
-- الموقع: ${business?.location || 'غير محدد'}
-- ساعات العمل: ${business?.hours || 'غير محددة'}
-- حساب انستقرام: ${business?.instagram || 'غير متوفر'}
+    // 7. Save AI Response
+    await supabase.from('messages').insert({ conversation_id: conversation.id, role: 'assistant', content: aiResponse })
 
-الخدمات المتوفرة:
-${servicesList}
-
-تعليماتك الخاصة:
-${agent.instructions || 'كوني ودودة ومحترفة في جميع الأوقات.'}
-
-قواعد عامة:
-- ردّي دائماً بالعربية الفصيحة الودودة.
-- لا تخترعي خدمات أو أسعار غير موجودة في القائمة أعلاه.
-- إذا طلبت العميلة حجزاً، اطلبي: الاسم الكامل، الخدمة المطلوبة، التاريخ والوقت المناسب.
-- إذا اكتملت معلومات الحجز، أكّدي بوضوح: "تم تسجيل حجزك ✅".
-- كوني موجزة وواضحة، تجنبي الردود الطويلة جداً.`
-
-    // ============================================================
-    // STEP 6: Call AI Model (OpenAI or Gemini)
-    // ============================================================
-    let aiResponse = ""
-    if (agent.model_provider === 'gemini') {
-      aiResponse = await callGemini(systemPrompt, previousMessages, message)
-    } else {
-      aiResponse = await callOpenAI(systemPrompt, previousMessages, message)
-    }
-
-    // ============================================================
-    // STEP 7: Save AI Response to Memory
-    // ============================================================
-    await supabase.from('messages').insert({
-      conversation_id: conversation.id,
-      role: 'assistant',
-      content: aiResponse,
-    })
-
-    // ============================================================
-    // STEP 8: Update Agent Stats
-    // ============================================================
-    await supabase
-      .from('agents')
-      .update({
-        messages_today: agent.messages_today + 1,
-        total_messages: agent.total_messages + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', agent.id)
-
-    return new Response(
-      JSON.stringify({ response: aiResponse, conversation_id: conversation.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return new Response(JSON.stringify({ response: aiResponse }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } catch (error) {
-    console.error('Messenger error:', error.message)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    console.error('Messenger Error:', error.message)
+    return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: corsHeaders })
   }
 })
 
-// ============================================================
-// OpenAI GPT-4o — with full conversation history
-// ============================================================
-async function callOpenAI(system: string, history: any[], userMessage: string) {
-  const apiKey = Deno.env.get('OPENAI_API_KEY')
-  if (!apiKey) throw new Error('OPENAI_API_KEY not set in Supabase secrets')
-
-  const messages = [
-    { role: 'system', content: system },
-    ...history.map((m: any) => ({ role: m.role, content: m.content })),
-    { role: 'user', content: userMessage },
+async function callGemini3(system: string, history: any[], userMessage: string, tools: any, userId: string, supabase: any) {
+  const apiKey = Deno.env.get('GEMINI_API_KEY')
+  const baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+  
+  let contents = [
+    { role: 'user', parts: [{ text: system }] },
+    { role: 'model', parts: [{ text: "مفهوم، أنا جاهزة للعمل كموظفة استقبال رقمية وسأستخدم الأدوات المتاحة لإدارة الحجوزات بدقة." }] },
+    ...history.reverse().map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    })),
+    { role: 'user', parts: [{ text: userMessage }] }
   ]
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  // First Call: Get Tool Calls or Response
+  let res = await fetch(`${baseUrl}?key=${apiKey}`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      messages,
-      max_tokens: 500,
-      temperature: 0.7,
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents, tools, tool_config: { function_calling_config: { mode: "AUTO" } } })
   })
 
-  const data = await res.json()
-  if (data.error) throw new Error(`OpenAI error: ${data.error.message}`)
-  return data.choices[0].message.content
-}
+  let data = await res.json()
+  let message = data.candidates[0].content
 
-// ============================================================
-// Google Gemini 1.5 Pro — with full conversation history
-// ============================================================
-async function callGemini(system: string, history: any[], userMessage: string) {
-  const apiKey = Deno.env.get('GEMINI_API_KEY')
-  if (!apiKey) throw new Error('GEMINI_API_KEY not set in Supabase secrets')
+  // Check for Tool Calls (The Agent Handler Loop)
+  if (message.parts[0].functionCall) {
+    const fn = message.parts[0].functionCall
+    console.log('Gemini Tool Call:', fn.name, fn.args)
 
-  // Build Gemini contents array from history
-  const contents = [
-    // System prompt as first user turn
-    { role: 'user', parts: [{ text: system }] },
-    { role: 'model', parts: [{ text: 'مفهوم، سأتبع هذه التعليمات بدقة.' }] },
-    // Previous conversation
-    ...history.map((m: any) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    })),
-    // New user message
-    { role: 'user', parts: [{ text: userMessage }] },
-  ]
+    let result = null
+    if (fn.name === 'get_day_bookings') {
+      const { data } = await supabase.rpc('get_day_bookings', { p_salon_id: userId, p_date: fn.args.date })
+      result = data
+    } else if (fn.name === 'check_availability') {
+      const { data } = await supabase.rpc('check_availability', { 
+        p_salon_id: userId, p_date: fn.args.date, p_time: fn.args.time 
+      })
+      result = { available: data }
+    } else if (fn.name === 'create_booking') {
+      const { data } = await supabase.rpc('create_booking', {
+        p_salon_id: userId,
+        p_client_name: fn.args.name,
+        p_client_phone: fn.args.phone,
+        p_service_name: fn.args.service,
+        p_date: fn.args.date,
+        p_time: fn.args.time,
+        p_channel: 'telegram'
+      })
+      result = { booking_id: data, status: 'success' }
+    }
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
-    {
+    // Second Call: Send Tool Result back to Gemini
+    contents.push(message)
+    contents.push({
+      role: 'function',
+      parts: [{ functionResponse: { name: fn.name, response: { content: result } } }]
+    })
+
+    res = await fetch(`${baseUrl}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 500, temperature: 0.7 } }),
-    }
-  )
+      body: JSON.stringify({ contents, tools })
+    })
+    data = await res.json()
+    return data.candidates[0].content.parts[0].text
+  }
 
-  const data = await res.json()
-  if (data.error) throw new Error(`Gemini error: ${data.error.message}`)
-  return data.candidates[0].content.parts[0].text
+  return message.parts[0].text
 }

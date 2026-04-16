@@ -390,6 +390,38 @@ BEGIN
   RETURN v_booking_id;
 END;$$;
 
+-- Check availability for a specific date and time
+CREATE OR REPLACE FUNCTION public.check_availability(
+  p_salon_id UUID,
+  p_date     DATE,
+  p_time     TIME
+)
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RETURN NOT EXISTS (
+    SELECT 1 FROM public.bookings
+    WHERE user_id = p_salon_id
+      AND appointment_date = p_date
+      AND appointment_time = p_time
+  );
+END;$$;
+
+-- Get all bookings for a day (for the agent to see slots)
+CREATE OR REPLACE FUNCTION public.get_day_bookings(
+  p_salon_id UUID,
+  p_date     DATE
+)
+RETURNS TABLE (appointment_time TIME, service_name TEXT) 
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  RETURN QUERY
+  SELECT b.appointment_time, b.service_name
+  FROM public.bookings b
+  WHERE b.user_id = p_salon_id
+    AND b.appointment_date = p_date
+  ORDER BY b.appointment_time;
+END;$$;
+
 -- Get recent conversation history for AI context window
 CREATE OR REPLACE FUNCTION public.get_conversation_history(
   p_user_id    UUID,
@@ -420,3 +452,5 @@ GRANT EXECUTE ON FUNCTION public.admin_add_credits(UUID, INT, TEXT)             
 GRANT EXECUTE ON FUNCTION public.get_agent_full_context(UUID)                         TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_booking(UUID, TEXT, TEXT, TEXT, DATE, TIME, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_conversation_history(UUID, TEXT, TEXT, INT)      TO authenticated;
+GRANT EXECUTE ON FUNCTION public.check_availability(UUID, DATE, TIME)                 TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_day_bookings(UUID, DATE)                        TO authenticated;
