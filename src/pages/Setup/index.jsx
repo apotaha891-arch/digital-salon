@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, Loader2, CloudLightning, Home, Briefcase, User, Plug } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useBusiness } from '../../hooks/useBusiness';
 import { useAgent } from '../../hooks/useAgent';
@@ -12,18 +13,19 @@ import PersonaTab from './tabs/PersonaTab';
 import IntegrationsTab from './tabs/IntegrationsTab';
 import Spinner from '../../components/ui/Spinner';
 
-const TABS = [
-  { id: 'sources', label: 'مصادر المعرفة', icon: CloudLightning },
-  { id: 'business', label: 'معلومات الصالون', icon: Home },
-  { id: 'services', label: 'الخدمات والمواعيد', icon: Briefcase },
-  { id: 'persona', label: 'شخصية الموظفة', icon: User },
-  { id: 'integrations', label: 'الربط التقني', icon: Plug },
-];
-
 export default function Setup() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('sources');
   const [success, setSuccess] = useState('');
+
+  const TABS = [
+    { id: 'sources', label: t('setup.tabs.sources'), icon: CloudLightning },
+    { id: 'business', label: t('setup.tabs.business'), icon: Home },
+    { id: 'services', label: t('setup.tabs.services'), icon: Briefcase },
+    { id: 'persona', label: t('setup.tabs.persona'), icon: User },
+    { id: 'integrations', label: t('setup.tabs.integrations'), icon: Plug },
+  ];
 
   // 1. Hook for persistent data
   const { business, loading: bLoading, updateBusiness, saving: bSaving } = useBusiness(user?.id);
@@ -54,7 +56,7 @@ export default function Setup() {
         await updateBusiness(localBusiness);
       }
       
-      setSuccess('تم حفظ التعديلات بنجاح ✨');
+      setSuccess(t('setup.save_success'));
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error(err);
@@ -70,9 +72,9 @@ export default function Setup() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-               <Settings size={28} style={{ color: 'var(--primary)' }} /> إعدادات الصالون الشاملة
+               <Settings size={28} style={{ color: 'var(--primary)' }} /> {t('setup.title')}
             </h1>
-            <p className="page-subtitle">تحكم في كل شاردة وواردة في صالونك وموظفتك الرقمية من مكان واحد</p>
+            <p className="page-subtitle">{t('setup.subtitle')}</p>
           </div>
         </div>
 
@@ -136,7 +138,7 @@ export default function Setup() {
           }}>
              {success && <span style={{ color: 'var(--success)', fontSize: 13, fontWeight: 700 }}>{success}</span>}
              <button className="btn btn-primary" onClick={handleGlobalSave} disabled={saving} style={{ padding: '14px 40px', fontWeight: 900 }}>
-               {saving ? <Loader2 className="spinner" size={18} /> : <><Save size={18} /> حفظ التعديلات</>}
+               {saving ? <Loader2 className="spinner" size={18} /> : <><Save size={18} /> {t('setup.save_btn')}</>}
              </button>
           </div>
         )}

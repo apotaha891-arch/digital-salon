@@ -1,64 +1,65 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   HelpCircle, X, Check, Copy, Send, MessageCircle, Globe 
 } from 'lucide-react';
 
-const INTEGRATION_TOOLS = [
-  {
-    id: 'telegram',
-    name: 'تيليجرام',
-    icon: Send,
-    color: '#0088cc',
-    fields: [{ name: 'token', label: 'Bot Token (التوكين)', placeholder: '123456:ABC-DEF...' }],
-    guide: [
-      'ابحث عن المعرف الرسمي @BotFather داخل تطبيق تيليجرام.',
-      'أرسل الأمر /newbot ثم اختر اسماً ومُعرفاً (Username) لموظفتك.',
-      'انسخ الـ API Token الذي سيظهر لك وقم بلصقه في الخانة المخصصة هنا.',
-      'اذهب إلى Bot Settings ثم Group Privacy وقم بتعطيله (Disabled) لتتمكن الموظفة من قراءة الرسائل.'
-    ],
-    checkLink: (conf) => !!conf.token
-  },
-  {
-    id: 'whatsapp',
-    name: 'واتساب',
-    icon: MessageCircle,
-    color: '#25D366',
-    fields: [
-      { name: 'phone_id', label: 'Phone Number ID (معرف الهاتف)', placeholder: '00000000000' },
-      { name: 'token', label: 'Access Token (مفتاح الوصول)', placeholder: 'EAAB...' }
-    ],
-    guide: [
-      'قم بإنشاء حساب مطورين في Meta for Developers.',
-      'أنشئ تطبيقاً من نوع Business واضف Whatsapp كمنتج أساسي.',
-      'احصل على مفتاح الوصول الدائم (Permanent Access Token) ومعرف الهاتف من لوحة التحكم.'
-    ],
-    checkLink: (conf) => !!conf.token && !!conf.phone_id
-  },
-  {
-    id: 'widget',
-    name: 'ويدجت الموقع',
-    icon: Globe,
-    color: '#D946EF',
-    fields: [
-      { name: 'domain', label: 'رابط الموقع (Domain)', placeholder: 'example.com' },
-      { name: 'welcome_message', label: 'رسالة الترحيب', placeholder: 'مرحباً! كيف يمكنني مساعدتك؟' },
-      { name: 'theme_color', label: 'لون الهوية', type: 'color', defaultValue: '#D946EF' }
-    ],
-    guide: [
-      'أدخل رابط موقعك الإلكتروني لضمان أن الويدجت سيعمل فقط على نطاقك المعتمد.',
-      'اختر لون الهوية (Theme Color) ورسالة الترحيب التي تعبر عن صالونك.',
-      'اضغط على "حفظ وتوليد الكود" للحصول على كود الربط.'
-    ],
-    checkLink: (conf) => !!conf.domain
-  }
-];
-
 export default function IntegrationsTab({ activeTools, agentId, agentName, onToolSave }) {
+  const { t } = useTranslation();
   const [showGuide, setShowGuide] = useState(null);
   const [copied, setCopied] = useState(false);
   const [localConfigs, setLocalConfigs] = useState(activeTools || {});
 
-  // Sync local configs with activeTools from props
+  const INTEGRATION_TOOLS = [
+    {
+      id: 'telegram',
+      name: t('integrations.telegram.name'),
+      icon: Send,
+      color: '#0088cc',
+      fields: [{ name: 'token', label: t('integrations.telegram.token_label'), placeholder: '123456:ABC-DEF...' }],
+      guide: [
+        t('integrations.telegram.guide_1'),
+        t('integrations.telegram.guide_2'),
+        t('integrations.telegram.guide_3'),
+        t('integrations.telegram.guide_4')
+      ],
+      checkLink: (conf) => !!conf.token
+    },
+    {
+      id: 'whatsapp',
+      name: t('integrations.whatsapp.name'),
+      icon: MessageCircle,
+      color: '#25D366',
+      fields: [
+        { name: 'phone_id', label: t('integrations.whatsapp.phone_id_label'), placeholder: '00000000000' },
+        { name: 'token', label: t('integrations.whatsapp.token_label'), placeholder: 'EAAB...' }
+      ],
+      guide: [
+        t('integrations.whatsapp.guide_1'),
+        t('integrations.whatsapp.guide_2'),
+        t('integrations.whatsapp.guide_3')
+      ],
+      checkLink: (conf) => !!conf.token && !!conf.phone_id
+    },
+    {
+      id: 'widget',
+      name: t('integrations.widget.name'),
+      icon: Globe,
+      color: '#D946EF',
+      fields: [
+        { name: 'domain', label: t('integrations.widget.domain_label'), placeholder: 'example.com' },
+        { name: 'welcome_message', label: t('integrations.widget.welcome_label'), placeholder: 'Hello!' },
+        { name: 'theme_color', label: t('integrations.widget.color_label'), type: 'color', defaultValue: '#D946EF' }
+      ],
+      guide: [
+        t('integrations.widget.guide_1'),
+        t('integrations.widget.guide_2'),
+        t('integrations.widget.guide_3')
+      ],
+      checkLink: (conf) => !!conf.domain
+    }
+  ];
+
   useEffect(() => {
     setLocalConfigs(activeTools);
   }, [activeTools]);
@@ -67,12 +68,6 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleFieldChange = (toolId, field, value) => {
-    const newConfig = { ...localConfigs[toolId], [field]: value };
-    setLocalConfigs(prev => ({ ...prev, [toolId]: newConfig }));
-    onToolSave(toolId, newConfig);
   };
 
   const currentTool = INTEGRATION_TOOLS.find(t => t.id === showGuide);
@@ -89,7 +84,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
           const isLinked = tool.checkLink(config);
           
           return (
-            <div key={tool.id} className="glass-card" style={{ padding: 24, textAlign: 'right' }}>
+            <div key={tool.id} className="glass-card" style={{ padding: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                 <div style={{ 
                   width: 48, height: 48, borderRadius: 12, 
@@ -99,7 +94,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                   <tool.icon size={24} />
                 </div>
                 <div className={`badge ${isLinked ? 'badge-active' : 'badge-inactive'}`} style={{ fontSize: 10 }}>
-                  {isLinked ? 'مربوطة' : 'غير مربوطة'}
+                  {isLinked ? t('integrations.status.linked') : t('integrations.status.not_linked')}
                 </div>
               </div>
               <h4 style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>{tool.name}</h4>
@@ -129,21 +124,20 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                 className="btn btn-primary btn-sm btn-full" 
                 style={{ fontSize: 11, marginBottom: 8 }}
               >
-                <Check size={14} style={{ marginRight: 4 }} /> حفظ الإعدادات
+                <Check size={14} style={{ marginRight: 4 }} /> {t('integrations.save_settings')}
               </button>
               <button 
                 onClick={() => setShowGuide(tool.id)} 
                 className="btn btn-secondary btn-sm btn-full" 
                 style={{ fontSize: 11, opacity: 0.7 }}
               >
-                <HelpCircle size={14} style={{ marginRight: 4 }} /> كيف يتم الربط؟
+                <HelpCircle size={14} style={{ marginRight: 4 }} /> {t('integrations.how_to_link')}
               </button>
             </div>
           );
         })}
       </div>
 
-      {/* Guidance Modal */}
       {showGuide && currentTool && (
         <div className="modal-backdrop" onClick={() => setShowGuide(null)}>
           <div className="modal-content glass-card" style={{ background: 'var(--surface)', maxWidth: 600 }} onClick={e => e.stopPropagation()}>
@@ -156,7 +150,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                 }}>
                   <currentTool.icon size={22} />
                 </div>
-                <h3 style={{ fontWeight: 900 }}>إرشادات {currentTool.name}</h3>
+                <h3 style={{ fontWeight: 900 }}>{t('integrations.guide_title', { name: currentTool.name })}</h3>
               </div>
               <button onClick={() => setShowGuide(null)} className="btn-icon"><X size={20} /></button>
             </div>

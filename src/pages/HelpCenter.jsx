@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Search, 
   HelpCircle, 
@@ -14,42 +15,43 @@ import {
   Smartphone
 } from 'lucide-react';
 
-const FAQS = [
-  {
-    category: 'البداية',
-    icon: Zap,
-    q: 'كيف تعمل الموظفة الرقمية؟',
-    a: 'الموظفة الرقمية هي ذكاء اصطناعي مُدرب على معلومات صالونك. تقوم بالرد على العميلات، حجز المواعيد، والإجابة على الاستفسارات عبر واتساب وتيليجرام وموقعك الإلكتروني.'
-  },
-  {
-    category: 'الرصيد',
-    icon: CreditCard,
-    q: 'كيف يتم خصم الرصيد (التوكنات)؟',
-    a: 'يتم خصم التوكنات بناءً على طول المحادثة. كل رسالة يتم الرد عليها تستهلك عدداً بسيطاً من التوكنات. يمكنك متابعة استهلاكك لحظة بلحظة من لوحة التحكم.'
-  },
-  {
-    category: 'التخصيص',
-    icon: BookOpen,
-    q: 'هل يمكنني تغيير اسم الموظفة أو شخصيتها؟',
-    a: 'نعم، من صفحة الإعدادات، يمكنك تخصيص اسم الموظفة، نبرة صوتها، والمعلومات التي تقدمها للعميلات لتعبر عن هوية صالونك.'
-  },
-  {
-    category: 'الرصيد',
-    icon: Smartphone,
-    q: 'ماذا يحدث إذا نفد رصيدي؟',
-    a: 'في حال نفاد الرصيد، ستتوقف الموظفة عن الرد مؤقتاً. يمكنك شحن رصيد إضافي فوراً من صفحة "الرصيد" لتعود الموظفة للعمل مباشرة.'
-  },
-  {
-    category: 'الحجوزات',
-    icon: Calendar,
-    q: 'كيف أحصل على تقارير الحجوزات؟',
-    a: 'جميع الحجوزات مسجلة في صفحة "الحجوزات" في لوحة تحكمك، حيث يمكنك عرضها، تأكيدها، أو إلغاؤها بكل سهولة.'
-  }
-];
-
 export default function HelpCenter() {
+  const { t, i18n } = useTranslation();
   const [search, setSearch] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
+
+  const FAQS = [
+    {
+      category: t('help.faq.start.cat'),
+      icon: Zap,
+      q: t('help.faq.start.q'),
+      a: t('help.faq.start.a')
+    },
+    {
+      category: t('help.faq.billing.cat'),
+      icon: CreditCard,
+      q: t('help.faq.billing.q'),
+      a: t('help.faq.billing.a')
+    },
+    {
+      category: t('help.faq.custom.cat'),
+      icon: BookOpen,
+      q: t('help.faq.custom.q'),
+      a: t('help.faq.custom.a')
+    },
+    {
+      category: t('help.faq.limit.cat'),
+      icon: Smartphone,
+      q: t('help.faq.limit.q'),
+      a: t('help.faq.limit.a')
+    },
+    {
+      category: t('help.faq.bookings.cat'),
+      icon: Calendar,
+      q: t('help.faq.bookings.q'),
+      a: t('help.faq.bookings.a')
+    }
+  ];
 
   const filteredFaqs = FAQS.filter(f => 
     f.q.toLowerCase().includes(search.toLowerCase()) || 
@@ -62,23 +64,26 @@ export default function HelpCenter() {
       {/* Hero Header */}
       <div style={{ textAlign: 'center', marginBottom: 60, marginTop: 20 }}>
         <h1 style={{ fontSize: 36, fontWeight: 900, marginBottom: 16, background: 'linear-gradient(to right, white, var(--primary))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          مركز الدعم الذكي 🛠️
+          {t('help.title')}
         </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 16 }}>نحن هنا للتأكد من نجاح صالونك الرقمي في كل خطوة</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: 16 }}>{t('help.subtitle')}</p>
       </div>
 
-      {/* Modern Search bar */}
+      {/* Search bar */}
       <div style={{ position: 'relative', marginBottom: 60, maxWidth: 650, margin: '0 auto 60px auto' }}>
-        <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }}>
+        <div style={{ position: 'absolute', right: i18n.dir() === 'rtl' ? 20 : 'auto', left: i18n.dir() === 'ltr' ? 20 : 'auto', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)' }}>
           <Search size={22} />
         </div>
         <input 
           type="text" 
-          placeholder="ابحثي عن سؤال، ميزة، أو حل لمشكلة..." 
+          placeholder={t('help.search_placeholder')} 
           className="neon-input"
           style={{ 
-            width: '100%', padding: '18px 56px 18px 24px', borderRadius: 16, 
-            fontSize: 16, fontWeight: 500
+            width: '100%', 
+            padding: i18n.dir() === 'rtl' ? '18px 56px 18px 24px' : '18px 24px 18px 56px', 
+            borderRadius: 16, 
+            fontSize: 16, 
+            fontWeight: 500
           }}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -89,7 +94,7 @@ export default function HelpCenter() {
         {/* FAQs Section */}
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <HelpCircle size={24} style={{ color: 'var(--primary)' }} /> الأسئلة الشائعة
+            <HelpCircle size={24} style={{ color: 'var(--primary)' }} /> {t('help.faqs_title')}
           </h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -116,7 +121,7 @@ export default function HelpCenter() {
                   <ChevronRight 
                     size={20} 
                     style={{ 
-                      transform: openFaq === idx ? 'rotate(90deg)' : 'none', 
+                      transform: openFaq === idx ? 'rotate(90deg)' : (i18n.dir() === 'rtl' ? 'rotate(180deg)' : 'none'), 
                       transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       color: openFaq === idx ? 'var(--primary)' : 'var(--text-muted)'
                     }} 
@@ -124,7 +129,8 @@ export default function HelpCenter() {
                 </div>
                 {openFaq === idx && (
                   <div style={{ 
-                    padding: '0 24px 24px 72px', color: 'var(--text-muted)', 
+                    padding: i18n.dir() === 'rtl' ? '0 72px 24px 24px' : '0 24px 24px 72px', 
+                    color: 'var(--text-muted)', 
                     fontSize: 15, lineHeight: 1.8, animation: 'fadeIn 0.4s ease'
                   }}>
                     {f.a}
@@ -135,7 +141,7 @@ export default function HelpCenter() {
             {filteredFaqs.length === 0 && (
               <div style={{ padding: 60, textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 24 }}>
                 <Search size={40} style={{ marginBottom: 16, opacity: 0.2 }} />
-                <p style={{ color: 'var(--text-muted)' }}>لم نجد نتائج تطابق بحثك.. جربي كلمات أخرى.</p>
+                <p style={{ color: 'var(--text-muted)' }}>{t('help.faq_empty')}</p>
               </div>
             )}
           </div>
@@ -146,13 +152,13 @@ export default function HelpCenter() {
           {/* Quick Links Card */}
           <div className="glass-card" style={{ padding: 28 }}>
             <h3 style={{ fontWeight: 900, fontSize: 18, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <ShieldCheck size={20} style={{ color: 'var(--primary)' }} /> روابط هامة
+              <ShieldCheck size={20} style={{ color: 'var(--primary)' }} /> {t('help.links_title')}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { to: '/integrations', label: 'دليل ربط القنوات' },
-                { to: '/billing', label: 'إدارة الرصيد والاشتراك' },
-                { to: '#', label: 'شروط الخصوصية' },
+                { to: '/integrations', label: t('help.links.guides') },
+                { to: '/billing', label: t('help.links.billing') },
+                { to: '#', label: t('help.links.privacy') },
               ].map((link, i) => (
                 <a key={i} href={link.to} style={{ 
                   color: 'var(--text)', textDecoration: 'none', fontSize: 14, 
@@ -168,7 +174,7 @@ export default function HelpCenter() {
             </div>
           </div>
 
-          {/* Premium Contact Card */}
+          {/* Contact Card */}
           <div className="glass-card" style={{ 
             padding: 32, 
             background: 'linear-gradient(135deg, rgba(217,70,239,0.15) 0%, rgba(147,51,234,0.05) 100%)',
@@ -182,9 +188,9 @@ export default function HelpCenter() {
             }}>
               <LifeBuoy size={30} />
             </div>
-            <h3 style={{ fontWeight: 900, fontSize: 20, marginBottom: 12 }}>ما زلتي تحاولين؟</h3>
+            <h3 style={{ fontWeight: 900, fontSize: 20, marginBottom: 12 }}>{t('help.contact.title')}</h3>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.6 }}>
-              فريق الخبراء لدينا جاهز لمساعدتك في عملية الربط أو أي استفسار تقني آخر.
+              {t('help.contact.sub')}
             </p>
             <a 
               href="https://wa.me/YOUR_SUPPORT_NUMBER" 
@@ -200,7 +206,7 @@ export default function HelpCenter() {
               onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <MessageCircle size={20} /> تواصل الآن عبر واتساب
+              <MessageCircle size={20} /> {t('help.contact.btn')}
             </a>
           </div>
         </div>

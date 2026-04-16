@@ -3,6 +3,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
+  /* DARK MODE (Default) */
   --primary: #D946EF;
   --secondary: #9333EA;
   --accent: #F0ABFC;
@@ -19,12 +20,22 @@
   --radius-sm: 10px;
 }
 
+body.light-mode {
+  --bg: #FDFBF7; /* Soft Cream */
+  --surface: #FFFFFF;
+  --surface2: #F5F1E9;
+  --border: rgba(217, 70, 239, 0.15);
+  --text: #1A0F2E;
+  --text-muted: rgba(26, 15, 46, 0.5);
+  --accent: #D946EF;
+}
+
 body {
   font-family: 'Tajawal', sans-serif;
   background: var(--bg);
   color: var(--text);
-  direction: rtl;
   min-height: 100vh;
+  text-align: start;
 }
 
 /* ── SCROLLBAR ── */
@@ -37,14 +48,37 @@ body {
 .sidebar {
   width: 260px; min-height: 100vh;
   background: var(--surface);
-  border-left: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   display: flex; flex-direction: column;
   padding: 24px 16px;
-  position: fixed; right: 0; top: 0; bottom: 0;
+  position: fixed; inset-inline-start: 0; top: 0; bottom: 0;
+  z-index: 50;
 }
 .main-content {
-  flex: 1; margin-right: 260px;
+  flex: 1; margin-inline-start: 260px;
   padding: 32px; overflow-y: auto;
+}
+
+.floating-settings {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
+  background: rgba(15, 10, 30, 0.4);
+  backdrop-filter: blur(8px);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+body.light-mode .floating-settings {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+[dir="rtl"] .floating-settings {
+  top: 90px; /* Offset to avoid clashing with the sidebar logo */
 }
 
 /* ── CARDS ── */
@@ -55,7 +89,7 @@ body {
   padding: 24px;
 }
 .card-glass {
-  background: rgba(26, 15, 46, 0.8);
+  background: color-mix(in srgb, var(--surface), transparent 20%);
   backdrop-filter: blur(20px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -266,8 +300,8 @@ body {
 }
 .faq-box:hover {
   background: rgba(255, 255, 255, 0.02);
-  border-right-color: var(--primary);
-  transform: translateX(-4px);
+  border-inline-start-color: var(--primary);
+  transform: translateX(calc(var(--dir-mod, 1) * -4px));
 }
 
 /* ── PAGE HEADER ── */
@@ -287,7 +321,7 @@ tr:hover td { background: rgba(217,70,239,0.05); }
 .auth-page {
   min-height: 100vh; display: flex;
   align-items: center; justify-content: center;
-  background: radial-gradient(ellipse at 50% 0%, rgba(217,70,239,0.15) 0%, transparent 70%), var(--bg);
+  background: radial-gradient(ellipse at 50% 0%, rgba(217,70,239,0.1) 0%, transparent 70%), var(--bg);
 }
 .auth-card { width: 100%; max-width: 420px; }
 .auth-title { font-size: 28px; font-weight: 900; text-align: center; margin-bottom: 8px; }

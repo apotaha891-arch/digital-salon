@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../hooks/useWallet';
 import { CreditCard, TrendingUp, TrendingDown, Clock, Zap } from 'lucide-react';
@@ -7,6 +8,7 @@ import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 
 export default function Billing() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { wallet, ledger, loading } = useWallet(user?.id);
 
@@ -15,25 +17,25 @@ export default function Billing() {
   return (
     <div className="fade-in">
       <div className="page-header">
-        <h1 className="page-title">إدارة الرصيد والتوكنز</h1>
-        <p className="page-subtitle">تابعي استهلاك التوكنز وعمليات الشحن الخاصة بصالونك</p>
+        <h1 className="page-title">{t('billing.title')}</h1>
+        <p className="page-subtitle">{t('billing.subtitle')}</p>
       </div>
 
       <div className="stats-grid" style={{ marginBottom: 32 }}>
         <StatCard 
-          label="الرصيد الحالي (توكن)" 
+          label={t('billing.balance_label')} 
           value={wallet?.balance ?? 0} 
           icon={Zap} 
           color="var(--success)" 
         />
         <StatCard 
-          label="إجمالي الاستهلاك" 
+          label={t('billing.total_usage')} 
           value="-- --" 
           icon={TrendingDown} 
           color="var(--error)" 
         />
         <StatCard 
-          label="آخر عملية شحن" 
+          label={t('billing.last_recharge')} 
           value={ledger[0]?.amount ? `+${ledger[0].amount}` : 0} 
           icon={TrendingUp} 
         />
@@ -42,9 +44,9 @@ export default function Billing() {
       <div className="grid-2" style={{ gap: 28 }}>
         {/* Recharge Card */}
         <div className="card" style={{ borderTop: '4px solid var(--primary)' }}>
-          <h3 style={{ marginBottom: 16, fontWeight: 700 }}>شحن الرصيد 💳</h3>
+          <h3 style={{ marginBottom: 16, fontWeight: 700 }}>{t('billing.recharge_title')}</h3>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>
-            اشحن رصيدك الآن لتضمن استمرارية عمل الموظفة الرقمية دون انقطاع. يتم خصم 1 توكن لكل رسالة مرسلة.
+            {t('billing.recharge_sub')}
           </p>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -61,16 +63,16 @@ export default function Billing() {
                   <div style={{ 
                     position: 'absolute', left: 16, top: -10, background: 'var(--primary)', 
                     color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 4, fontWeight: 900 
-                  }}>الأكثر طلباً</div>
+                  }}>{t('billing.plans.popular')}</div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }}>{plan.amount} توكن</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>صلاحية غير محدودة</div>
+                    <div style={{ fontWeight: 900, fontSize: 18 }}>{plan.amount} {t('billing.plans.tokens')}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('billing.plans.unlimited')}</div>
                   </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--primary)' }}>{plan.price} ر.س</div>
-                    <button className="btn btn-primary btn-sm" style={{ marginTop: 8 }}>شراء الآن</button>
+                  <div style={{ textAlign: i18n.dir() === 'rtl' ? 'left' : 'right' }}>
+                    <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--primary)' }}>{plan.price} {t('common.sar_short') || 'SAR'}</div>
+                    <button className="btn btn-primary btn-sm" style={{ marginTop: 8 }}>{t('billing.plans.buy_now')}</button>
                   </div>
                 </div>
               </div>
@@ -80,7 +82,7 @@ export default function Billing() {
 
         {/* History Card */}
         <div className="card">
-          <h3 style={{ marginBottom: 16, fontWeight: 700 }}>سجل العمليات 📜</h3>
+          <h3 style={{ marginBottom: 16, fontWeight: 700 }}>{t('billing.ledger_title')}</h3>
           {ledger.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {ledger.map(item => (
@@ -101,7 +103,7 @@ export default function Billing() {
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 14 }}>{item.reason}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                        <Clock size={10} /> {new Date(item.created_at).toLocaleDateString('ar-SA')}
+                        <Clock size={10} /> {new Date(item.created_at).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}
                       </div>
                     </div>
                   </div>
@@ -114,8 +116,8 @@ export default function Billing() {
           ) : (
             <EmptyState 
               icon={CreditCard}
-              title="لا توجد عمليات مسبقة"
-              description="ستظهر هنا كافة عمليات شحن واستهلاك الرصيد."
+              title={t('billing.ledger_empty_title')}
+              description={t('billing.ledger_empty_sub')}
             />
           )}
         </div>

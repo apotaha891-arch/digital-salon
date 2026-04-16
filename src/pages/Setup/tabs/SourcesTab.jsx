@@ -1,7 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sparkles, FileUp, Zap } from 'lucide-react';
 
 export default function SourcesTab() {
+  const { t } = useTranslation();
+
   return (
     <div className="fade-in">
       <div style={{ 
@@ -13,10 +16,10 @@ export default function SourcesTab() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           <Sparkles style={{ color: 'var(--primary)' }} size={24} />
-          <h3 style={{ fontWeight: 900 }}>الرفع الذكي بوحدة الذكاء (AI Powered)</h3>
+          <h3 style={{ fontWeight: 900 }}>{t('setup.tabs.sources_title')}</h3>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          ارفعي ملفات صالونك أو ضعي رابط موقعك، وسنقوم بتغذية الموظفة بكافة التفاصيل تلقائياً.
+          {t('setup.tabs.sources_sub')}
         </p>
       </div>
 
@@ -28,7 +31,7 @@ export default function SourcesTab() {
         background: 'rgba(255,255,255,0.01)' 
       }}>
         <FileUp size={28} style={{ color: 'var(--primary)', marginBottom: 20 }} />
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>قومي بسحب وإفلات الملفات هنا</div>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{t('setup.tabs.sources_drop')}</div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>PDF, Word, Excel</div>
       </div>
 
@@ -38,7 +41,7 @@ export default function SourcesTab() {
         fontWeight: 900, 
         background: 'linear-gradient(to right, var(--primary), var(--accent))' 
       }}>
-        <Zap size={20} /> بدء استخراج البيانات
+        <Zap size={20} /> {t('setup.tabs.sources_btn')}
       </button>
     </div>
   );

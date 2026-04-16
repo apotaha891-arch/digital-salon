@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useTickets } from '../hooks/useTickets';
 import { MessageSquare } from 'lucide-react';
@@ -7,6 +8,7 @@ import EmptyState from '../components/ui/EmptyState';
 import TicketRow from '../components/tickets/TicketRow';
 
 export default function Tickets() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { tickets, loading, updateStatus } = useTickets(user?.id);
 
@@ -15,8 +17,8 @@ export default function Tickets() {
   return (
     <div className="fade-in">
       <div className="page-header">
-        <h1 className="page-title">تذاكر الدعم</h1>
-        <p className="page-subtitle">تابعي استفسارات ومشكلات العميلات التي تم تحويلها إليك</p>
+        <h1 className="page-title">{t('tickets.title')}</h1>
+        <p className="page-subtitle">{t('tickets.subtitle')}</p>
       </div>
 
       <div style={{ marginTop: 24 }}>
@@ -31,8 +33,8 @@ export default function Tickets() {
         ) : (
           <EmptyState 
             icon={MessageSquare}
-            title="لا توجد تذاكر حالياً"
-            description="عندما تعجز الموظفة الرقمية عن حل مشكلة معينة، ستقوم بفتح تذكرة لك هنا."
+            title={t('tickets.empty.title')}
+            description={t('tickets.empty.description')}
           />
         )}
       </div>

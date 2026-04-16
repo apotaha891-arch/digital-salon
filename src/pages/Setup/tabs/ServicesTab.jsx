@@ -1,7 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Clock } from 'lucide-react';
 
 export default function ServicesTab({ services, onUpdate }) {
+  const { t } = useTranslation();
+
   const addService = () => {
     const newId = Math.random().toString(36).substr(2, 9);
     onUpdate([...services, { id: newId, name: '', price: '', duration: '' }]);
@@ -12,7 +15,6 @@ export default function ServicesTab({ services, onUpdate }) {
   };
 
   const updateServiceValue = (id, field, value) => {
-    // Only update the specific row by ID. If ID is missing, we use index as fallback.
     onUpdate(services.map((s, idx) => {
       const match = s.id ? s.id === id : `temp-${idx}` === id;
       return match ? { ...s, [field]: value } : s;
@@ -22,9 +24,9 @@ export default function ServicesTab({ services, onUpdate }) {
   return (
     <div className="fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-        <h3 style={{ fontWeight: 900 }}>قائمة الخدمات والأسعار ✂️</h3>
+        <h3 style={{ fontWeight: 900 }}>{t('services.title')}</h3>
         <button className="btn btn-primary btn-sm" onClick={addService}>
-          <Plus size={16} /> إضافة خدمة
+          <Plus size={16} /> {t('services.add_service')}
         </button>
       </div>
 
@@ -42,13 +44,13 @@ export default function ServicesTab({ services, onUpdate }) {
               className="form-input neon-input" 
               value={s.name || ''} 
               onChange={e => updateServiceValue(s.id || `temp-${index}`, 'name', e.target.value)} 
-              placeholder="اسم الخدمة..." 
+              placeholder={t('services.placeholder_name')} 
             />
             <input 
               className="form-input neon-input" 
               value={s.price || ''} 
               onChange={e => updateServiceValue(s.id || `temp-${index}`, 'price', e.target.value)} 
-              placeholder="السعر (ر.س)" 
+              placeholder={t('services.placeholder_price')} 
             />
             <div style={{ position: 'relative' }}>
               <Clock size={16} style={{ 
@@ -63,7 +65,7 @@ export default function ServicesTab({ services, onUpdate }) {
                 style={{ paddingRight: 40 }} 
                 value={s.duration || ''} 
                 onChange={e => updateServiceValue(s.id || `temp-${index}`, 'duration', e.target.value)} 
-                placeholder="المدة..." 
+                placeholder={t('services.placeholder_duration')} 
               />
             </div>
             <button 
@@ -78,7 +80,7 @@ export default function ServicesTab({ services, onUpdate }) {
 
         {services.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-            لا توجد خدمات مضافة حالياً.
+            {t('services.empty')}
           </div>
         )}
       </div>

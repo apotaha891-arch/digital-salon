@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useBookings } from '../hooks/useBookings';
 import { Calendar } from 'lucide-react';
@@ -7,6 +8,7 @@ import EmptyState from '../components/ui/EmptyState';
 import BookingRow from '../components/bookings/BookingRow';
 
 export default function Bookings() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { 
     bookings, 
@@ -22,8 +24,8 @@ export default function Bookings() {
     <div className="fade-in">
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 className="page-title">إدارة الحجوزات</h1>
-          <p className="page-subtitle">تابعي مواعيد عميلاتك وأكدي الحجوزات الجديدة</p>
+          <h1 className="page-title">{t('bookings.title')}</h1>
+          <p className="page-subtitle">{t('bookings.subtitle')}</p>
         </div>
         
         <div style={{ display: 'flex', gap: 12 }}>
@@ -33,10 +35,10 @@ export default function Bookings() {
             value={filters.status || ''}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           >
-            <option value="">جميع الحالات</option>
-            <option value="pending">قيد الانتظار</option>
-            <option value="confirmed">مؤكدة</option>
-            <option value="cancelled">ملغاة</option>
+            <option value="">{t('bookings.status.all')}</option>
+            <option value="pending">{t('bookings.status.pending')}</option>
+            <option value="confirmed">{t('bookings.status.confirmed')}</option>
+            <option value="cancelled">{t('bookings.status.cancelled')}</option>
           </select>
           <input 
             type="date" 
@@ -60,8 +62,8 @@ export default function Bookings() {
         ) : (
           <EmptyState 
             icon={Calendar}
-            title="لا توجد حجوزات حالياً"
-            description="عندما تقوم الموظفة الرقمية بتسجيل حجوزات جديدة ستظهر لك هنا فوراً."
+            title={t('bookings.empty.title')}
+            description={t('bookings.empty.description')}
           />
         )}
       </div>

@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function PersonaTab({ agent, onUpdate }) {
+  const { t } = useTranslation();
   const handleChange = (field, value) => {
     onUpdate({ ...agent, [field]: value });
   };
@@ -27,7 +29,7 @@ export default function PersonaTab({ agent, onUpdate }) {
             className="form-input" 
             value={agent.avatar || ''} 
             onChange={e => handleChange('avatar', e.target.value)} 
-            placeholder="أيقونة" 
+            placeholder={t('setup.tabs.agent_avatar')} 
             style={{ textAlign: 'center' }} 
           />
         </div>
@@ -40,7 +42,7 @@ export default function PersonaTab({ agent, onUpdate }) {
             borderRadius: 16, 
             border: '1px solid rgba(217,70,239,0.1)' 
           }}>
-            <label className="form-label" style={{ marginBottom: 16 }}>اختيار العقل المدبر للموقع 🧠</label>
+            <label className="form-label" style={{ marginBottom: 16 }}>{t('setup.tabs.model_choice')}</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <button 
                 onClick={() => handleChange('model_provider', 'openai')}
@@ -53,8 +55,8 @@ export default function PersonaTab({ agent, onUpdate }) {
                   transition: 'all 0.2s', 
                   textAlign: 'center'
                 }}>
-                <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 4 }}>OpenAI GPT-4o</div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>ذكي، دقيق ومستقر</div>
+                <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 4 }}>{t('setup.tabs.openai_name')}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{t('setup.tabs.openai_sub')}</div>
               </button>
               <button 
                 onClick={() => handleChange('model_provider', 'gemini')}
@@ -67,14 +69,14 @@ export default function PersonaTab({ agent, onUpdate }) {
                   transition: 'all 0.2s', 
                   textAlign: 'center'
                 }}>
-                <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 4 }}>Google Gemini</div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>سريع، مبدع وعربي أصيل</div>
+                <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 4 }}>{t('setup.tabs.gemini_name')}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{t('setup.tabs.gemini_sub')}</div>
               </button>
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">اسم الموظفة الرقمية *</label>
+            <label className="form-label">{t('setup.tabs.agent_name')}</label>
             <input 
               className="form-input neon-input" 
               value={agent.name || ''} 
@@ -82,12 +84,12 @@ export default function PersonaTab({ agent, onUpdate }) {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">تعليمات الذكاء الاصطناعي (Prompts) 🧠</label>
+            <label className="form-label">{t('setup.tabs.ai_instructions')}</label>
             <textarea 
               className="form-input neon-input" 
               rows={8} 
               style={{ height: 'auto', paddingTop: 12, lineHeight: 1.6 }} 
-              placeholder="هنا تكتبين 'سر الصنعة'.." 
+              placeholder={t('setup.tabs.ai_instructions_placeholder')} 
               value={agent.instructions || ''} 
               onChange={e => handleChange('instructions', e.target.value)} 
             />

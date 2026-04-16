@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import Setup from './pages/Setup/index';
 import Dashboard from './pages/Dashboard';
@@ -7,7 +10,7 @@ import Bookings from './pages/Bookings';
 import Tickets from './pages/Tickets';
 import Integrations from './pages/Integrations';
 import Billing from './pages/Billing';
-import HelpCenter from './pages/HelpCenter'; // New Import
+import HelpCenter from './pages/HelpCenter';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import AdminSettings from './pages/admin/AdminSettings';
@@ -24,6 +27,15 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    const dir = i18n.dir();
+    document.documentElement.dir = dir;
+    document.documentElement.lang = i18n.language;
+    document.body.dir = dir;
+  }, [i18n.language]);
+
   return (
     <Routes>
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
@@ -50,10 +62,12 @@ const AppRoutes = () => {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

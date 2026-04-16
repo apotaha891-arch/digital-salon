@@ -1,0 +1,242 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "bookings": "Booking Chats",
+    "tickets": "Help Tickets",
+    "setup": "Salon Setup",
+    "billing": "Billing",
+    "help": "Help Center",
+    "admin": "Admin Dashboard",
+    "logout": "Logout",
+    "welcome": "Welcome to {{name}}",
+    "active": "Active",
+    "inactive": "Inactive",
+    "agent_role": "Booking & Reception Assistant",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "on": "On",
+    "off": "Off",
+    "user": "User",
+    "actions": "Actions",
+    "status": "Status",
+    "search": "Search",
+    "date": "Date",
+    "price": "Price",
+    "sar_short": "SAR",
+    "duration": "Duration",
+    "name": "Name",
+    "delete": "Delete",
+    "add": "Add"
+  },
+  "dashboard": {
+    "stats": {
+      "messages": "Messages Today",
+      "bookings": "Bookings Today",
+      "tools": "Connected Tools",
+      "tokens": "Token Balance"
+    },
+    "quick_actions": {
+      "title": "Quick Actions",
+      "connect": "Connect Channel",
+      "connect_sub": "WhatsApp, Telegram, Widget",
+      "recharge": "Recharge Balance",
+      "recharge_sub": "Add tokens to power your agent",
+      "settings": "Salon Settings",
+      "settings_sub": "Manage business details"
+    },
+    "support": {
+      "title": "Need Technical Help?",
+      "sub": "Chat with our support team directly via WhatsApp",
+      "btn": "Open Chat"
+    }
+  },
+  "sidebar": {
+    "main": "MAIN",
+    "support": "HELP",
+    "client_panel": "Client Panel",
+    "admin_panel": "Admin Panel"
+  },
+  "settings": {
+    "light_mode": "Light Mode",
+    "dark_mode": "Dark Mode",
+    "language": "Language"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "fullName_placeholder": "Your full name",
+    "error_invalid": "Invalid email or password",
+    "create_account": "Create Account",
+    "enter": "Sign In",
+    "signup_bonus": "Sign up and get 100 free tokens to try! 🎁"
+  },
+  "setup": {
+    "title": "Comprehensive Salon Settings",
+    "subtitle": "Control every detail of your salon and digital employee from one place",
+    "save_success": "Changes saved successfully ✨",
+    "save_btn": "Save Changes",
+    "tabs": {
+      "sources": "Knowledge Sources",
+      "business": "Salon Info",
+      "services": "Services & Bookings",
+      "persona": "Agent Persona",
+      "integrations": "Tech Integrations",
+      "business_title": "Primary Salon Info 🏠",
+      "business_sub": "Ensure these details are correct for accurate agent responses",
+      "agent_name": "Digital Employee Name *",
+      "agent_avatar": "Avatar Icon",
+      "ai_instructions": "AI Logic (Prompts) 🧠",
+      "ai_instructions_placeholder": "Write your 'secret recipe' here...",
+      "model_choice": "Choose the AI Mind 🧠",
+      "openai_name": "OpenAI GPT-4o",
+      "openai_sub": "Smart, accurate, and stable",
+      "gemini_name": "Google Gemini",
+      "gemini_sub": "Fast, creative, and localized",
+      "sources_title": "AI-Powered Smart Import",
+      "sources_sub": "Upload your salon documents or website URL to feed the AI agent.",
+      "sources_drop": "Drag & drop files here",
+      "sources_btn": "Start Data Extraction"
+    }
+  },
+  "bookings": {
+    "title": "Manage Bookings",
+    "subtitle": "Track your bookings and confirm new requests",
+    "status": {
+      "all": "All Statuses",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    },
+    "no_phone": "No Phone Number",
+    "service_label": "Service",
+    "empty": {
+      "title": "No bookings yet",
+      "description": "When your digital employee records new bookings, they will appear here."
+    }
+  },
+  "tickets": {
+    "title": "Help Tickets",
+    "subtitle": "Track inquiries that require your attention",
+    "status": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved"
+    },
+    "mark_resolved": "Mark as (Resolved)",
+    "empty": {
+      "title": "No tickets yet",
+      "description": "When the agent cannot solve an issue, it will open a ticket for you here."
+    }
+  },
+  "integrations": {
+    "status": {
+      "linked": "Linked",
+      "not_linked": "Not Linked"
+    },
+    "how_to_link": "How to link?",
+    "save_settings": "Save Settings",
+    "guide_title": "{{name}} Instructions",
+    "telegram": {
+      "name": "Telegram",
+      "token_label": "Bot Token",
+      "guide_1": "Search for @BotFather in Telegram app.",
+      "guide_2": "Send /newbot and choose a name.",
+      "guide_3": "Copy the API Token and paste it here.",
+      "guide_4": "Disable 'Group Privacy' in Bot Settings."
+    },
+    "whatsapp": {
+      "name": "WhatsApp",
+      "phone_id_label": "Phone Number ID",
+      "token_label": "Access Token",
+      "guide_1": "Create a developer account at Meta for Developers.",
+      "guide_2": "Create a Business app and add WhatsApp product.",
+      "guide_3": "Get your Permanent Access Token and Phone ID from the dashboard."
+    },
+    "widget": {
+      "name": "Website Widget",
+      "domain_label": "Domain URL",
+      "welcome_label": "Welcome Message",
+      "color_label": "Theme Color",
+      "guide_1": "Enter your verified website domain URL.",
+      "guide_2": "Choose a theme color and welcome message.",
+      "guide_3": "Click 'Save Settings' to generate your embed code."
+    }
+  },
+  "services": {
+    "title": "Services & Prices ✂️",
+    "add_service": "Add Service",
+    "placeholder_name": "Service name...",
+    "placeholder_price": "Price (SAR)",
+    "placeholder_duration": "Duration...",
+    "empty": "No services added yet."
+  },
+  "billing": {
+    "title": "Billing & Balance Management",
+    "subtitle": "Track token usage and recharge history for your salon",
+    "balance_label": "Current Balance (Tokens)",
+    "total_usage": "Total Usage",
+    "last_recharge": "Last Recharge",
+    "recharge_title": "Recharge Balance 💳",
+    "recharge_sub": "Recharge now to ensure your digital employee keeps running. 1 token is deducted per message sent.",
+    "plans": {
+      "tokens": "Tokens",
+      "unlimited": "Unlimited Validity",
+      "popular": "Most Popular",
+      "buy_now": "Buy Now"
+    },
+    "ledger_title": "Transaction Ledger 📜",
+    "ledger_empty_title": "No transactions yet",
+    "ledger_empty_sub": "All recharge and usage history will appear here."
+  },
+  "help": {
+    "title": "Smart Support Center 🛠️",
+    "subtitle": "We are here to ensure your digital salon success every step of the way",
+    "search_placeholder": "Search for a question, feature, or solution...",
+    "faqs_title": "Frequently Asked Questions",
+    "faq_empty": "No results found for your search. Try different keywords.",
+    "links_title": "Important Links",
+    "links": {
+      "guides": "Channel Integration Guide",
+      "billing": "Billing & Subscription",
+      "privacy": "Privacy Terms"
+    },
+    "contact": {
+      "title": "Still Need Help?",
+      "sub": "Our team of experts is ready to assist you with integration or any technical issues.",
+      "btn": "Contact now via WhatsApp"
+    },
+    "faq": {
+      "start": {
+        "cat": "Getting Started",
+        "q": "How does the digital employee work?",
+        "a": "The digital employee is an AI trained on your salon info. It responds to clients, books appointments, and answers inquiries via WhatsApp, Telegram, and your website."
+      },
+      "billing": {
+        "cat": "Billing",
+        "q": "How are tokens deducted?",
+        "a": "Tokens are deducted based on conversation length. Each replied message consumes a small amount of tokens. You can track usage in real-time from the dashboard."
+      },
+      "custom": {
+        "cat": "Customization",
+        "q": "Can I change the agent's name or personality?",
+        "a": "Yes, from Settings, you can customize the name, tone of voice, and knowledge to reflect your salon's brand."
+      },
+      "limit": {
+        "cat": "Billing",
+        "q": "What happens if I run out of tokens?",
+        "a": "If you run out of tokens, the agent will temporarily stop responding. You can recharge immediately from the Billing page to resume service."
+      },
+      "bookings": {
+        "cat": "Bookings",
+        "q": "How do I get booking reports?",
+        "a": "All bookings are recorded in the Bookings page in your dashboard, where you can view, confirm, or cancel them easily."
+      }
+    }
+  }
+}

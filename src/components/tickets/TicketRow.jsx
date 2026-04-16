@@ -1,18 +1,15 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { MessageSquare, User, Clock, CheckCircle } from 'lucide-react';
 import Badge from '../../components/ui/Badge';
 
 export default function TicketRow({ ticket, onUpdateStatus }) {
+  const { t, i18n } = useTranslation();
+  
   const statusColors = {
     open: 'warning',
     in_progress: 'active',
     resolved: 'success'
-  };
-
-  const statusLabels = {
-    open: 'مفتوحة',
-    in_progress: 'قيد المتابعة',
-    resolved: 'تم الحل'
   };
 
   return (
@@ -32,7 +29,7 @@ export default function TicketRow({ ticket, onUpdateStatus }) {
             <div style={{ fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <User size={12} /> {ticket.customer_name}
               <span className="dot" />
-              <Clock size={12} /> {new Date(ticket.created_at).toLocaleDateString('ar-SA')}
+              <Clock size={12} /> {new Date(ticket.created_at).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US')}
             </div>
             <p style={{ marginTop: 12, fontSize: 13, lineHeight: 1.5, color: 'var(--text-main)', opacity: 0.9 }}>
               {ticket.message}
@@ -42,7 +39,7 @@ export default function TicketRow({ ticket, onUpdateStatus }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
           <Badge variant={statusColors[ticket.status]}>
-            {statusLabels[ticket.status]}
+            {t(`tickets.status.${ticket.status}`)}
           </Badge>
 
           {ticket.status !== 'resolved' && (
@@ -51,7 +48,7 @@ export default function TicketRow({ ticket, onUpdateStatus }) {
               onClick={() => onUpdateStatus(ticket.id, 'resolved')}
               style={{ padding: '6px 12px', fontSize: 11 }}
             >
-              <CheckCircle size={14} style={{ marginLeft: 6 }} /> وضع علامة "تم الحل"
+              <CheckCircle size={14} style={{ marginLeft: 6, marginRight: 6 }} /> {t('tickets.mark_resolved')}
             </button>
           )}
         </div>

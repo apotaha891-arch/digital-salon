@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useAgent } from '../hooks/useAgent';
 import { useBusiness } from '../hooks/useBusiness';
@@ -12,6 +13,7 @@ import Spinner from '../components/ui/Spinner';
 import Badge from '../components/ui/Badge';
 
 export default function Dashboard() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -22,20 +24,26 @@ export default function Dashboard() {
 
   const loading = aLoading || bLoading || wLoading || iLoading;
 
-  // If no setup done, redirect 
   useEffect(() => {
     if (!loading && !agent && !business) navigate('/setup');
   }, [loading, agent, business, navigate]);
 
   if (loading) return <Spinner centered />;
 
-  const activeIntegrationsCount = integrations.filter(i => i.is_active).length;
+  const activeIntegrationsCount = integrations.filter(i => {
+    if (i.provider === 'telegram') return !!i.config?.token;
+    if (i.provider === 'whatsapp') return !!i.config?.token && !!i.config?.phone_id;
+    if (i.provider === 'widget') return !!i.config?.domain;
+    return false;
+  }).length;
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">لوحة التحكم</h1>
-        <p className="page-subtitle">مرحباً بك في {business?.name || 'صالونك الرقمي'}</p>
+        <h1 className="page-title" style={{ fontSize: 26, fontWeight: 900 }}>
+          {business?.name || (i18n.language === 'ar' ? 'صالونك الرقمي' : 'Your Digital Salon')}
+        </h1>
+        <p className="page-subtitle" style={{ fontSize: 16 }}>{t('common.dashboard')}</p>
       </div>
 
       {/* Agent Status Card */}
@@ -43,9 +51,9 @@ export default function Dashboard() {
         <div className="agent-avatar">{agent?.avatar || '💅'}</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 4 }}>{agent?.name}</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 12 }}>مساعدة الحجز والاستقبال</div>
+          <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 12 }}>{t('common.agent_role')}</div>
           <Badge variant={agent?.is_active ? 'active' : 'inactive'} icon={agent?.is_active ? Wifi : WifiOff}>
-            {agent?.is_active ? 'نشطة' : 'متوقفة'}
+            {agent?.is_active ? t('common.active') : t('common.inactive')}
           </Badge>
         </div>
         <div style={{ textAlign: 'center' }}>
@@ -59,22 +67,22 @@ export default function Dashboard() {
             <span className="toggle-slider" />
           </label>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-            {tSaving ? '...' : agent?.is_active ? 'إيقاف' : 'تشغيل'}
+            {tSaving ? '...' : agent?.is_active ? t('common.off') : t('common.on')}
           </div>
         </div>
       </div>
 
       {/* Quick Stats Grid */}
       <div className="stats-grid" style={{ marginBottom: 28 }}>
-        <StatCard label="رسائل اليوم" value={agent?.messages_today || 0} />
-        <StatCard label="حجوزات اليوم" value={agent?.bookings_today || 0} />
-        <StatCard label="أدوات مربوطة" value={activeIntegrationsCount} />
-        <StatCard label="رصيد التوكن" value={wallet?.balance ?? 0} color="var(--success)" />
+        <StatCard label={t('dashboard.stats.messages')} value={agent?.messages_today || 0} />
+        <StatCard label={t('dashboard.stats.bookings')} value={agent?.bookings_today || 0} />
+        <StatCard label={t('dashboard.stats.tools')} value={activeIntegrationsCount} />
+        <StatCard label={t('dashboard.stats.tokens')} value={wallet?.balance ?? 0} color="var(--success)" />
       </div>
 
       {/* Quick Actions */}
       <div className="page-header">
-        <h2 style={{ fontSize: 18, fontWeight: 700 }}>إجراءات سريعة</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700 }}>{t('dashboard.quick_actions.title')}</h2>
       </div>
       <div style={{ 
         display: 'grid', 
@@ -83,9 +91,9 @@ export default function Dashboard() {
         marginBottom: 28 
       }}>
         {[
-          { icon: Plug, label: 'ربط أداة تواصل', sub: 'واتساب، تيليجرام، ويدجت', to: '/integrations', color: 'var(--primary)' },
-          { icon: CreditCard, label: 'شحن الرصيد', sub: 'إضافة توكن لتشغيل الموظفة', to: '/billing', color: 'var(--success)' },
-          { icon: Settings, label: 'إعدادات الصالون', sub: 'تعديل بيانات المنشأة', to: '/setup', color: 'var(--warning)' },
+          { icon: Plug, label: t('dashboard.quick_actions.connect'), sub: t('dashboard.quick_actions.connect_sub'), to: '/integrations', color: 'var(--primary)' },
+          { icon: CreditCard, label: t('dashboard.quick_actions.recharge'), sub: t('dashboard.quick_actions.recharge_sub'), to: '/billing', color: 'var(--success)' },
+          { icon: Settings, label: t('dashboard.quick_actions.settings'), sub: t('dashboard.quick_actions.settings_sub'), to: '/setup', color: 'var(--warning)' },
         ].map(({ icon: Icon, label, sub, to, color }) => (
           <div 
             key={to} 
@@ -112,15 +120,15 @@ export default function Dashboard() {
             <MessageSquare size={24} />
           </div>
           <div>
-            <div style={{ fontWeight: 700 }}>تحتاج مساعدة تقنية؟</div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>تواصل مع فريق الدعم الفني مباشرة عبر واتساب</div>
+            <div style={{ fontWeight: 700 }}>{t('dashboard.support.title')}</div>
+            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('dashboard.support.sub')}</div>
           </div>
           <button 
             className="btn btn-secondary" 
             style={{ marginRight: 'auto' }} 
-            onClick={() => window.open('https://wa.me/966XXXXXXXXX')} // Updated from dummy text
+            onClick={() => window.open('https://wa.me/966XXXXXXXXX')}
           >
-            فتح المحادثة
+            {t('dashboard.support.btn')}
           </button>
         </div>
       </div>
