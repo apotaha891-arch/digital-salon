@@ -181,7 +181,7 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
       const system_instruction = { parts: [{ text: system }] }
       const chatHistory = history.slice(0, 10).reverse().map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
+        parts: [{ text: (m.content || "").substring(0, 2000) }] // Safety truncation
       }))
       const contents = [...chatHistory, { role: 'user', parts: [{ text: userMessage }] }]
 
