@@ -106,27 +106,37 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
                 {tool.fields.map(field => (
                   <div key={`${tool.id}-${field.name}`}>
+                    <label style={{ fontSize: 10, opacity: 0.6, marginBottom: 4, display: 'block' }}>{field.label}</label>
                     <input 
                       type={field.type || 'text'} 
                       className="form-input neon-input" 
                       value={config[field.name] || ''} 
-                      placeholder={field.label} 
+                      placeholder={field.placeholder} 
                       style={{ fontSize: 12, height: 40 }} 
                       onChange={(e) => {
-                        // Change local state but only trigger onBlur for DB
                         const val = e.target.value;
                         setLocalConfigs(prev => ({
                           ...prev,
                           [tool.id]: { ...prev[tool.id], [field.name]: val }
                         }));
                       }}
-                      onBlur={(e) => onToolSave(tool.id, { ...config, [field.name]: e.target.value })} 
                     />
                   </div>
                 ))}
               </div>
-              <button onClick={() => setShowGuide(tool.id)} className="btn btn-secondary btn-sm btn-full" style={{ fontSize: 11 }}>
-                <HelpCircle size={14} style={{ marginRight: 1 }} /> كيف يتم الربط؟
+              <button 
+                onClick={() => onToolSave(tool.id, config)} 
+                className="btn btn-primary btn-sm btn-full" 
+                style={{ fontSize: 11, marginBottom: 8 }}
+              >
+                <Check size={14} style={{ marginRight: 4 }} /> حفظ الإعدادات
+              </button>
+              <button 
+                onClick={() => setShowGuide(tool.id)} 
+                className="btn btn-secondary btn-sm btn-full" 
+                style={{ fontSize: 11, opacity: 0.7 }}
+              >
+                <HelpCircle size={14} style={{ marginRight: 4 }} /> كيف يتم الربط؟
               </button>
             </div>
           );
