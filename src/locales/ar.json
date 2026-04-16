@@ -238,5 +238,49 @@
         "a": "جميع الحجوزات مسجلة في صفحة 'الحجوزات' في لوحة تحكمك، حيث يمكنك عرضها، تأكيدها، أو إلغاؤها بكل سهولة."
       }
     }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "لوحة الأدمن 🛡️",
+      "subtitle": "نظرة عامة على جميع عملاء المنصة",
+      "stats": {
+        "total_clients": "إجمالي العملاء",
+        "active_agents": "موظفات نشطة",
+        "total_tokens": "إجمالي التوكنات",
+        "activation_rate": "نسبة التفعيل"
+      },
+      "recent_clients": "آخر العملاء المنضمين",
+      "table": {
+        "client": "العميل",
+        "agent": "الموظفة",
+        "balance": "الرصيد",
+        "status": "الحالة",
+        "join_date": "تاريخ الانضمام"
+      }
+    },
+    "clients": {
+      "title": "إدارة العملاء",
+      "subtitle": "قائمة بجميع الصالونات المسجلة في المنصة",
+      "table": {
+        "details": "التفاصيل",
+        "actions": "الإجراءات"
+      },
+      "status": {
+        "active": "نشط",
+        "inactive": "معطل",
+        "connected": "متصلة",
+        "disconnected": "منقطعة",
+        "not_created": "لم تنشأ"
+      },
+      "actions": {
+        "recharge": "شحن"
+      },
+      "modal": {
+        "recharge_title": "إضافة رصيد لـ {{name}}",
+        "amount_label": "المبلغ (توكن)",
+        "confirm_btn": "تأكيد الإضافة",
+        "ledger_reason": "شحن رصيد من الإدارة"
+      }
+    }
   }
 }

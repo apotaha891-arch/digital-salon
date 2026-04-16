@@ -1,3 +1,4 @@
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -15,7 +16,7 @@ serve(async (req: Request) => {
     // Only process inserts or updates for telegram provider
     if (record.provider !== 'telegram') return new Response('Skipped: not telegram')
 
-    const token = record.config?.token
+    const token = record.config?.token?.trim()
     if (!token) return new Response('Skipped: no token')
 
     // Construct the webhook URL

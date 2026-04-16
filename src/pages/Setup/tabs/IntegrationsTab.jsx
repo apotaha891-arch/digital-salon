@@ -109,7 +109,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                       placeholder={field.placeholder} 
                       style={{ fontSize: 12, height: 40 }} 
                       onChange={(e) => {
-                        const val = e.target.value;
+                        const val = e.target.value.trim();
                         setLocalConfigs(prev => ({
                           ...prev,
                           [tool.id]: { ...prev[tool.id], [field.name]: val }

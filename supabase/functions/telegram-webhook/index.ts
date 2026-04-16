@@ -6,17 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    (Deno as any).env.get('SUPABASE_URL') ?? '',
+    (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   )
 
   try {
     const url = new URL(req.url)
-    const token = url.searchParams.get('token')
+    const token = (url.searchParams.get('token') || '').trim()
     if (!token) throw new Error('Bot token missing in URL')
 
     const update = await req.json()
@@ -34,6 +34,7 @@ serve(async (req) => {
     console.log('Message:', userMessage)
 
     // 1. Identify Salon Owner
+    console.log(`Looking up owner for token starting with: ${token.substring(0, 10)} (Length: ${token.length})`)
     const { data: integration, error: intError } = await supabase
       .from('integrations')
       .select('user_id')
@@ -42,8 +43,9 @@ serve(async (req) => {
       .single()
 
     if (intError || !integration) {
-      console.error('Owner not found for token:', token.substring(0, 10))
-      throw new Error('Link between token and user not found')
+      console.error('Owner NOT FOUND in database for this token.')
+      if (intError) console.error('Database Error:', intError.message)
+      throw new Error(`Link between token and user not found (Token Length: ${token.length})`)
     }
 
     const userId = integration.user_id
@@ -68,14 +70,15 @@ serve(async (req) => {
     }
 
     // 3. Call Brain (Messenger)
-    console.log('Calling AI Brain via Fetch (Manual JWT)...')
+    console.log('Calling AI Brain via Fetch...')
     const messengerUrl = `${(Deno as any).env.get('SUPABASE_URL')}/functions/v1/messenger`
-    const srKey = (Deno as any).env.get('SR_KEY')
+    // @ts-ignore
+    const serviceRoleKey = (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY')
     
     const res = await fetch(messengerUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${srKey}`,
+        'Authorization': `Bearer ${serviceRoleKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -86,15 +89,21 @@ serve(async (req) => {
       })
     })
 
+    console.log(`Brain Response Status: ${res.status}`)
+
     if (!res.ok) {
       const errText = await res.text()
       console.error('Brain Error:', errText)
       throw new Error(`Messenger error: ${errText}`)
     }
 
-    const { response: aiResponse } = await res.json()
-    console.log('AI Response Received.')
-    console.log('AI Response:', aiResponse)
+    const brainData = await res.json()
+    const aiResponse = brainData.response
+    const systemVersion = res.headers.get('X-System-Version')
+
+    console.log(`AI Response Received (Version: ${systemVersion || 'Unknown'}).`)
+    console.log('RAW Brain Response:', JSON.stringify(brainData))
+    console.log('Extracted AI Response:', aiResponse)
 
     if (aiResponse) {
       // 4. Send Message back
@@ -112,7 +121,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('--- Webhook Error ---')
     console.error(error.message)
     return new Response(JSON.stringify({ error: error.message }), { status: 200 }) // Return 200 to stop Telegram retries

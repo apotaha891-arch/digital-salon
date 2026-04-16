@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAdmin } from '../../hooks/useAdmin';
 import { User, CreditCard, Power, Plus, CheckCircle, AlertCircle } from 'lucide-react';
 import Spinner from '../../components/ui/Spinner';
@@ -6,6 +7,7 @@ import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 
 export default function AdminClients() {
+  const { t, i18n } = useTranslation();
   const { clients, loading, addCredits, toggleClientStatus } = useAdmin();
   const [selectedClient, setSelectedClient] = useState(null);
   const [creditAmount, setCreditAmount] = useState(100);
@@ -15,7 +17,7 @@ export default function AdminClients() {
     if (!selectedClient) return;
     setSaving(true);
     try {
-      await addCredits(selectedClient.id, creditAmount, 'شحن رصيد من الإدارة');
+      await addCredits(selectedClient.id, creditAmount, t('admin.clients.modal.ledger_reason'));
       setSelectedClient(null);
     } catch (e) {
       console.error(e);
@@ -29,19 +31,19 @@ export default function AdminClients() {
   return (
     <div className="fade-in">
       <div className="page-header">
-        <h1 className="page-title">إدارة العملاء</h1>
-        <p className="page-subtitle">قائمة بجميع الصالونات المسجلة في المنصة</p>
+        <h1 className="page-title">{t('admin.clients.title')}</h1>
+        <p className="page-subtitle">{t('admin.clients.subtitle')}</p>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 24 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: i18n.dir() === 'rtl' ? 'right' : 'left' }}>
           <thead>
             <tr style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)' }}>
-              <th style={{ padding: '16px 24px' }}>العميل</th>
-              <th style={{ padding: '16px 24px' }}>التفاصيل</th>
-              <th style={{ padding: '16px 24px' }}>الرصيد</th>
-              <th style={{ padding: '16px 24px' }}>الموظفة</th>
-              <th style={{ padding: '16px 24px' }}>الإجراءات</th>
+              <th style={{ padding: '16px 24px' }}>{t('admin.dashboard.table.client')}</th>
+              <th style={{ padding: '16px 24px' }}>{t('admin.clients.table.details')}</th>
+              <th style={{ padding: '16px 24px' }}>{t('admin.dashboard.table.balance')}</th>
+              <th style={{ padding: '16px 24px' }}>{t('admin.dashboard.table.agent')}</th>
+              <th style={{ padding: '16px 24px' }}>{t('admin.clients.table.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -53,16 +55,18 @@ export default function AdminClients() {
                 </td>
                 <td style={{ padding: '16px 24px' }}>
                   <Badge variant={client.is_active ? 'success' : 'inactive'} size="sm">
-                    {client.is_active ? 'نشط' : 'معطل'}
+                    {client.is_active ? t('admin.clients.status.active') : t('admin.clients.status.inactive')}
                   </Badge>
                 </td>
                 <td style={{ padding: '16px 24px' }}>
-                  <div style={{ fontWeight: 900, color: 'var(--success)' }}>{client.wallet_balance} توكن</div>
+                  <div style={{ fontWeight: 900, color: 'var(--success)' }}>
+                    {client.wallet_balance} {t('billing.plans.tokens')}
+                  </div>
                 </td>
                 <td style={{ padding: '16px 24px' }}>
-                  <div style={{ fontSize: 13 }}>{client.agent_name || 'لم تنشأ'}</div>
+                  <div style={{ fontSize: 13 }}>{client.agent_name || t('admin.clients.status.not_created')}</div>
                   <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                    {client.agent_active ? 'متصلة' : 'منقطعة'}
+                    {client.agent_active ? t('admin.clients.status.connected') : t('admin.clients.status.disconnected')}
                   </div>
                 </td>
                 <td style={{ padding: '16px 24px' }}>
@@ -71,7 +75,7 @@ export default function AdminClients() {
                       className="btn btn-secondary btn-sm" 
                       onClick={() => setSelectedClient(client)}
                     >
-                      <Plus size={14} style={{ marginLeft: 4 }} /> شحن
+                      <Plus size={14} style={{ marginInlineEnd: 4 }} /> {t('admin.clients.actions.recharge')}
                     </button>
                     <button 
                       className={`btn-icon ${client.is_active ? 'text-error' : 'text-success'}`}
@@ -92,12 +96,12 @@ export default function AdminClients() {
       <Modal 
         isOpen={!!selectedClient} 
         onClose={() => setSelectedClient(null)} 
-        title={`إضافة رصيد لـ ${selectedClient?.full_name}`}
+        title={t('admin.clients.modal.recharge_title', { name: selectedClient?.full_name })}
         maxWidth={400}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div className="form-group">
-            <label className="form-label">المبلغ (توكن)</label>
+            <label className="form-label">{t('admin.clients.modal.amount_label')}</label>
             <input 
               type="number" 
               className="form-input neon-input" 
@@ -110,7 +114,7 @@ export default function AdminClients() {
             onClick={handleAddCredits}
             disabled={saving}
           >
-            {saving ? <Spinner size={16} /> : 'تأكيد الإضافة'}
+            {saving ? <Spinner size={16} /> : t('admin.clients.modal.confirm_btn')}
           </button>
         </div>
       </Modal>

@@ -33,9 +33,9 @@ export default function Sidebar({ profile, isAdmin }) {
   ];
 
   const adminNav = [
-    { to: '/admin', icon: LayoutDashboard, label: t('common.admin') },
-    { to: '/admin/clients', icon: Users, label: t('sidebar.admin_panel') },
-    { to: '/admin/settings', icon: Settings, label: t('settings.language') },
+    { to: '/admin', icon: LayoutDashboard, label: t('admin.dashboard.title') },
+    { to: '/admin/clients', icon: Users, label: t('admin.clients.title') },
+    { to: '/admin/settings', icon: Settings, label: t('common.setup') },
   ];
 
   const nav = isAdmin ? adminNav : clientNav;

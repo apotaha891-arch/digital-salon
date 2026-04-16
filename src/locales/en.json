@@ -238,5 +238,49 @@
         "a": "All bookings are recorded in the Bookings page in your dashboard, where you can view, confirm, or cancel them easily."
       }
     }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Admin Dashboard 🛡️",
+      "subtitle": "Overview of all platform clients",
+      "stats": {
+        "total_clients": "Total Clients",
+        "active_agents": "Active Agents",
+        "total_tokens": "Total Tokens",
+        "activation_rate": "Activation Rate"
+      },
+      "recent_clients": "Recent Joined Clients",
+      "table": {
+        "client": "Client",
+        "agent": "Agent",
+        "balance": "Balance",
+        "status": "Status",
+        "join_date": "Join Date"
+      }
+    },
+    "clients": {
+      "title": "Manage Clients",
+      "subtitle": "List of all salons registered on the platform",
+      "table": {
+        "details": "Details",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "not_created": "Not Created"
+      },
+      "actions": {
+        "recharge": "Recharge"
+      },
+      "modal": {
+        "recharge_title": "Add balance to {{name}}",
+        "amount_label": "Amount (Tokens)",
+        "confirm_btn": "Confirm Recharge",
+        "ledger_reason": "Admin Recharge"
+      }
+    }
   }
 }
