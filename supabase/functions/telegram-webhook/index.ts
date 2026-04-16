@@ -50,10 +50,16 @@ serve(async (req) => {
     console.log('User ID Identified:', userId)
 
     // 2. Check Wallet
-    const { data: hasFunds } = await supabase.rpc('check_wallet_balance', { 
+    console.log('Checking wallet balance for:', userId)
+    const { data: hasFunds, error: walletError } = await supabase.rpc('check_wallet_balance', { 
       p_user_id: userId, 
       p_required: 1 
     })
+
+    if (walletError) {
+      console.error('Wallet RPC Error:', walletError.message)
+      throw new Error(`Database error while checking wallet: ${walletError.message}`)
+    }
 
     if (!hasFunds) {
       console.log('Wallet empty for user:', userId)
@@ -62,12 +68,14 @@ serve(async (req) => {
     }
 
     // 3. Call Brain (Messenger)
-    console.log('Calling AI Brain...')
-    const messengerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/messenger`
+    console.log('Calling AI Brain via Fetch (Manual JWT)...')
+    const messengerUrl = `${(Deno as any).env.get('SUPABASE_URL')}/functions/v1/messenger`
+    const srKey = (Deno as any).env.get('SR_KEY')
+    
     const res = await fetch(messengerUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Authorization': `Bearer ${srKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -85,6 +93,7 @@ serve(async (req) => {
     }
 
     const { response: aiResponse } = await res.json()
+    console.log('AI Response Received.')
     console.log('AI Response:', aiResponse)
 
     if (aiResponse) {

@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
@@ -19,7 +19,7 @@ serve(async (req) => {
     if (!token) return new Response('Skipped: no token')
 
     // Construct the webhook URL
-    const projectUrl = Deno.env.get('SUPABASE_URL')
+    const projectUrl = (Deno as any).env.get('SUPABASE_URL')
     const webhookUrl = `${projectUrl}/functions/v1/telegram-webhook?token=${token}`
 
     console.log(`Setting up Telegram Webhook for bot: ${token.substring(0, 10)}...`)
@@ -43,7 +43,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Setup Error:', error.message)
     return new Response(JSON.stringify({ error: error.message }), { status: 400 })
   }

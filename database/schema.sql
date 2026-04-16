@@ -454,3 +454,5 @@ GRANT EXECUTE ON FUNCTION public.create_booking(UUID, TEXT, TEXT, TEXT, DATE, TI
 GRANT EXECUTE ON FUNCTION public.get_conversation_history(UUID, TEXT, TEXT, INT)      TO authenticated;
 GRANT EXECUTE ON FUNCTION public.check_availability(UUID, DATE, TIME)                 TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_day_bookings(UUID, DATE)                        TO authenticated;
+GRANT EXECUTE ON FUNCTION public.check_wallet_balance(UUID, INT)                     TO authenticated;
+GRANT EXECUTE ON FUNCTION public.deduct_tokens(UUID, INT, TEXT)                      TO authenticated;
