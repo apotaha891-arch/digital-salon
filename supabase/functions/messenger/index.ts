@@ -11,12 +11,11 @@ const corsHeaders = {
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
-  const supabase = createClient(
-    // @ts-ignore
-    (Deno as any).env.get('SUPABASE_URL') ?? '',
-    // @ts-ignore
-    (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY') || (Deno as any).env.get('SR_KEY') || ''
-  )
+    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY')
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      serviceRoleKey ?? ''
+    )
 
   try {
     // 0. Receipt Log
@@ -24,8 +23,7 @@ serve(async (req: Request) => {
 
     // 1. Internal Security Check
     const authHeader = req.headers.get('Authorization')
-    // @ts-ignore
-    const serviceRoleKey = (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY')
+    // serviceRoleKey was fetched above
     
     if (authHeader !== `Bearer ${serviceRoleKey}`) {
       console.error('Unauthorized internal call attempt (Key mismatch)')
@@ -107,7 +105,7 @@ serve(async (req: Request) => {
 
     // 5. Build optimized prompt
     const servicesContext = JSON.stringify(business.services || []).substring(0, 5000)
-    const todayGregorian = new Date().toLocaleDateString('en-GB')
+    const todayGregorian = new Date().toISOString().split('T')[0]
 
     const systemPrompt = `أنتِ "${agent.name}"، موظفة استقبال رقمية محترفة في صالون "${business.name}".
 اليوم هو ${todayGregorian} (ميلادي).
@@ -122,7 +120,7 @@ serve(async (req: Request) => {
 ${servicesContext}`
 
     // 6. Call AI
-    const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase)
+    const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase, platform)
     console.log(`[BRAIN V3.1] Final aiResponse (Type: ${typeof aiResponse}):`, aiResponse)
     
     // Save Response
@@ -136,33 +134,59 @@ ${servicesContext}`
       headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-System-Version': 'V3.1-DIAG' } 
     })
 
-  } catch (error: any) {
-    console.error('Messenger Error:', error.message)
-    return new Response(JSON.stringify({ error: error.message }), { 
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('Messenger Error:', errorMessage)
+    return new Response(JSON.stringify({ error: errorMessage }), { 
       status: 400, headers: corsHeaders 
     })
   }
 })
 
-async function callGeminiDynamic(system: string, history: any[], userMessage: string, tools: any, userId: string, supabase: any) {
-  // @ts-ignore
-  const apiKey = (Deno as any).env.get('GEMINI_API_KEY')
+async function callGeminiDynamic(system: string, history: any[], userMessage: string, tools: any, userId: string, supabase: any, platform: string) {
+  const apiKey = Deno.env.get('GEMINI_API_KEY')
+  console.log(`[DEBUG] Gemini API Key present: ${!!apiKey}`)
   
   let availableModelIds: string[] = []
   try {
     const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
     const listData = await listRes.json()
+    if (listData.error) {
+      console.error('[DEBUG] Gemini List Models Error:', listData.error)
+    }
     availableModelIds = (listData.models || []).map((m: any) => m.name)
+    console.log(`[DEBUG] Found ${availableModelIds.length} models.`)
   } catch (e) {
+    console.error('[DEBUG] Failed to fetch model list, using fallback.', e)
     availableModelIds = ["models/gemini-1.5-flash"]
   }
 
-  const priorityKeywords = ['gemini-1.5-pro', 'gemini-1.5-flash']
+  const priorityKeywords = [
+    'gemini-3.1-pro', 
+    'gemini-3-flash', 
+    'gemini-2.5-flash', 
+    'gemini-2-flash', 
+    'gemini-1.5-pro', 
+    'gemini-1.5-flash'
+  ]
+  
   const sortedModels = availableModelIds
-    .filter(id => priorityKeywords.some(kw => id.includes(kw)))
-    .sort((a, b) => a.includes('pro') ? -1 : 1)
+    .filter(id => priorityKeywords.some(kw => id.toLowerCase().includes(kw)))
+    .sort((a, b) => {
+      // Find the index of the matching keyword to determine priority
+      const getPriority = (id: string) => {
+        const index = priorityKeywords.findIndex(kw => id.toLowerCase().includes(kw));
+        return index === -1 ? 999 : index;
+      };
+      return getPriority(a) - getPriority(b);
+    });
 
-  if (sortedModels.length === 0) sortedModels.push("models/gemini-1.5-flash")
+  if (sortedModels.length === 0) {
+    console.warn('[DEBUG] No priority models found in list, adding common defaults.')
+    sortedModels.push("models/gemini-2.0-flash", "models/gemini-1.5-flash")
+  }
+
+  console.log(`[DEBUG] Final sorted models to try: ${sortedModels.join(', ')}`)
 
   for (const modelId of sortedModels) {
     try {
@@ -184,50 +208,85 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
       })
 
       const data = await res.json()
-      if (data.error) continue
-      if (!data.candidates || data.candidates.length === 0) continue
+      if (data.error) {
+        console.error(`[DEBUG] Gemini Generate Error (${modelId}):`, JSON.stringify(data.error))
+        continue
+      }
+      if (!data.candidates || data.candidates.length === 0) {
+        console.warn(`[DEBUG] Gemini No Candidates (${modelId}):`, JSON.stringify(data))
+        continue
+      }
       
       const messageBody = data.candidates[0].content
       const parts = messageBody.parts || []
       
-      const functionCallPart = parts.find((p: any) => p.functionCall)
-      if (functionCallPart) {
+      // Tool Handling Loop (Max 5 iterations to avoid infinite loops)
+      let currentMessageBody = messageBody
+      let loopCount = 0
+      
+      while (loopCount < 5) {
+        const functionCallPart = currentMessageBody.parts?.find((p: any) => p.functionCall)
+        if (!functionCallPart) break
+        
+        loopCount++
         const fn = functionCallPart.functionCall
+        console.log(`[TOOL CALL #${loopCount}] AI requested: ${fn.name} with args:`, JSON.stringify(fn.args))
+        
         let result = null
         try {
           if (fn.name === 'get_day_bookings') {
-            const { data } = await supabase.rpc('get_day_bookings', { p_salon_id: userId, p_date: fn.args.date })
+            const { data, error } = await supabase.rpc('get_day_bookings', { p_salon_id: userId, p_date: fn.args.date })
+            if (error) throw error
             result = data
           } else if (fn.name === 'check_availability') {
-            const { data } = await supabase.rpc('check_availability', { p_salon_id: userId, p_date: fn.args.date, p_time: fn.args.time })
+            const { data, error } = await supabase.rpc('check_availability', { p_salon_id: userId, p_date: fn.args.date, p_time: fn.args.time })
+            if (error) throw error
             result = { available: data }
           } else if (fn.name === 'create_booking') {
-            const { data } = await supabase.rpc('create_booking', {
+            console.log(`[BOOKING] Attempting creation for user ${userId} via ${platform}`)
+            const { data, error } = await supabase.rpc('create_booking', {
               p_salon_id: userId, p_client_name: fn.args.name, p_client_phone: fn.args.phone,
-              p_service_name: fn.args.service, p_date: fn.args.date, p_time: fn.args.time, p_channel: 'whatsapp'
+              p_service_name: fn.args.service, p_date: fn.args.date, p_time: fn.args.time, p_channel: platform || 'telegram'
             })
+            if (error) throw error
+            console.log(`[BOOKING] Success: ID ${data}`)
             result = { booking_id: data, status: 'success' }
           }
         } catch (dbErr: any) {
-          result = { error: "Database error" }
+          console.error(`[TOOL ERROR] DB Error during ${fn.name}:`, dbErr.message)
+          result = { error: dbErr.message || "Database execution failed" }
         }
 
-        const secondRes = await fetch(`${baseUrl}?key=${apiKey}`, {
+        console.log(`[TOOL RESULT] Sending back to AI:`, JSON.stringify(result))
+
+        const nextRes = await fetch(`${baseUrl}?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             contents: [
-              ...contents, messageBody, 
+              ...contents, currentMessageBody, 
               { role: 'function', parts: [{ functionResponse: { name: fn.name, response: { content: result } } } as any] }
             ],
             tools, system_instruction 
           })
         })
-        const secondData = await secondRes.json()
-        const secondParts = secondData.candidates?.[0]?.content?.parts || []
-        const secondText = secondParts.map((p: any) => p.text || '').join('\n').trim()
-        return secondText || "تم تنفيذ طلبك بنجاح."
+        
+        const nextData = await nextRes.json()
+        if (nextData.error) {
+           console.error('[DEBUG] Gemini Sequential Call Error:', JSON.stringify(nextData.error))
+           break
+        }
+        
+        currentMessageBody = nextData.candidates?.[0]?.content
+        if (!currentMessageBody) break
+        
+        const textPart = currentMessageBody.parts?.map((p: any) => p.text || '').join('\n').trim()
+        if (textPart) return textPart // AI finally returned text
       }
+      
+      const finalParts = currentMessageBody.parts || []
+      const finalText = finalParts.map((p: any) => p.text || '').join('\n').trim()
+      return finalText || "تمت معالجة طلبك بنجاح."
 
       const fullText = parts.map((p: any) => p.text || '').join('\n').trim()
       if (fullText) return fullText

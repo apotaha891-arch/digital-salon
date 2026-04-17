@@ -33,6 +33,9 @@ serve(async (req: Request) => {
     const userMessage = update.message.text
     console.log('Message:', userMessage)
 
+    // A. Show Typing Status
+    await sendChatAction(token, chatId, 'typing')
+
     // 1. Identify Salon Owner
     console.log(`Looking up owner for token starting with: ${token.substring(0, 10)} (Length: ${token.length})`)
     const { data: integration, error: intError } = await supabase
@@ -50,6 +53,23 @@ serve(async (req: Request) => {
 
     const userId = integration.user_id
     console.log('User ID Identified:', userId)
+
+    // B. CRM: Add/Update customer in Salon's list
+    const from = update.message.from
+    const fullName = [from?.first_name, from?.last_name].filter(Boolean).join(' ') || 'Unknown'
+    
+    const { error: crmError } = await supabase
+      .from('customers')
+      .upsert({
+        user_id: userId,
+        external_id: chatId.toString(),
+        platform: 'telegram',
+        full_name: fullName,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,external_id,platform' })
+    
+    if (crmError) console.error('CRM Error:', crmError.message)
+    else console.log('CRM: Customer updated successfully.')
 
     // 2. Check Wallet
     console.log('Checking wallet balance for:', userId)
@@ -72,9 +92,13 @@ serve(async (req: Request) => {
     // 3. Call Brain (Messenger)
     console.log('Calling AI Brain via Fetch...')
     const messengerUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/messenger`
-    // deno-lint-ignore no-explicit-any
-    const serviceRoleKey = (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY')
     
+    if (!serviceRoleKey) {
+      console.error('CRITICAL: SERVICE_ROLE_KEY is missing in environment secrets.')
+      throw new Error('Internal Configuration Error: Key missing')
+    }
+
     const res = await fetch(messengerUrl, {
       method: 'POST',
       headers: {
@@ -138,5 +162,17 @@ async function sendTelegramMessage(token: string, chatId: number, text: string) 
   if (!res.ok) {
      const data = await res.json()
      console.error('Telegram API Error:', data)
+  }
+}
+
+async function sendChatAction(token: string, chatId: number, action: string) {
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendChatAction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, action })
+    })
+  } catch (e) {
+    console.error('Typing Simulation Error:', e)
   }
 }
