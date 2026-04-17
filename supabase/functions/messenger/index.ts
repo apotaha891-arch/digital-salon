@@ -107,17 +107,23 @@ serve(async (req: Request) => {
     const servicesContext = JSON.stringify(business.services || []).substring(0, 5000)
     const todayGregorian = new Date().toISOString().split('T')[0]
 
-    const systemPrompt = `أنتِ "${agent.name}"، موظفة استقبال رقمية محترفة في صالون "${business.name}".
+    const systemPrompt = `أنتِ "${agent.name}"، موظفة استقبال رقمية محترفة في صالون "${business.name}". 
 اليوم هو ${todayGregorian} (ميلادي).
 مهمتك: مساعدة العملاء في معرفة الخدمات، الأسعار، وحجز المواعيد.
+
 القواعد:
-1. كوني ودودة ومختصرة.
-2. قبل تأكيد أي حجز، استخدمي أداة (check_availability) للتأكد من توفر الموعد.
-3. إذا طلب العميل خدمة غير موجودة، اقترحي الخدمات المتاحة.
-4. استخدمي التاريخ الميلادي دائمًا في ردودك وأدواتك.
+1. خاطبي العميلات دائمًا بلقب "يا مدام" أو "عزيزتي" لضمان الرقي والمهنية.
+2. كوني ودودة ومختصرة.
+3. التحقق من رقم الهاتف: يجب أن يتكون رقم الهاتف من (7 إلى 15 رقماً). إذا كان الرقم ناقصاً أو يبدو خاطئاً، اطلبي من العميلة بلباقة التأكد من صحته قبل المتابعة.
+4. قبل تأكيد أي حجز، استخدمي أداة (check_availability) للتأكد من توفر الموعد.
+4. إذا طلب العميل خدمة غير موجودة، اقترحي الخدمات المتاحة.
+5. استخدمي التاريخ الميلادي دائمًا في ردودك وأدواتك.
 
 الخدمات المتاحة بأسعارها ومدتها:
-${servicesContext}`
+${servicesContext}
+
+تعليمات إضافية خاصة بشخصيتك:
+${agent.instructions || 'لا توجد تعليمات إضافية.'}`
 
     // 6. Call AI
     const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase, platform)
@@ -246,7 +252,9 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
             console.log(`[BOOKING] Attempting creation for user ${userId} via ${platform}`)
             const { data, error } = await supabase.rpc('create_booking', {
               p_salon_id: userId, p_client_name: fn.args.name, p_client_phone: fn.args.phone,
-              p_service_name: fn.args.service, p_date: fn.args.date, p_time: fn.args.time, p_channel: platform || 'telegram'
+              p_service_name: fn.args.service, p_date: fn.args.date, p_time: fn.args.time, 
+              p_channel: platform || 'telegram',
+              p_external_id: external_id
             })
             if (error) throw error
             console.log(`[BOOKING] Success: ID ${data}`)

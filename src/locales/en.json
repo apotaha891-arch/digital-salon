@@ -5,6 +5,7 @@
     "tickets": "Help Tickets",
     "setup": "Salon Setup",
     "billing": "Billing",
+    "customers": "Customers",
     "help": "Help Center",
     "admin": "Admin Dashboard",
     "logout": "Logout",
@@ -118,6 +119,20 @@
     "empty": {
       "title": "No bookings yet",
       "description": "When your digital employee records new bookings, they will appear here."
+    }
+  },
+  "customers": {
+    "title": "Customer CRM",
+    "subtitle": "Manage your customer list from Telegram and WhatsApp",
+    "table": {
+      "name": "Customer Name",
+      "platform": "Platform",
+      "last_visit": "Last Interaction",
+      "actions": "Actions"
+    },
+    "empty": {
+      "title": "No customers yet",
+      "description": "When customers start messaging your salon bot, they will appear here automatically."
     }
   },
   "tickets": {

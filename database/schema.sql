@@ -365,12 +365,14 @@ CREATE OR REPLACE FUNCTION public.create_booking(
   p_service_name TEXT,
   p_date        DATE,
   p_time        TIME,
-  p_channel     TEXT DEFAULT 'whatsapp'
+  p_channel     TEXT DEFAULT 'whatsapp',
+  p_external_id TEXT DEFAULT NULL  -- Link to Telegram/WhatsApp ID
 )
 RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER AS $$
 DECLARE
   v_booking_id UUID;
 BEGIN
+  -- 1. Insert into bookings
   INSERT INTO public.bookings (
     user_id, client_name, client_phone, service_name,
     appointment_date, appointment_time, channel
@@ -381,7 +383,18 @@ BEGIN
   )
   RETURNING id INTO v_booking_id;
 
-  -- Increment agent daily bookings counter
+  -- 2. Sync to CRM (customers table) if we have an external_id
+  IF p_external_id IS NOT NULL THEN
+    UPDATE public.customers
+    SET full_name = p_client_name,
+        phone = p_client_phone,
+        updated_at = NOW()
+    WHERE user_id = p_salon_id 
+      AND external_id = p_external_id 
+      AND platform = p_channel;
+  END IF;
+
+  -- 3. Increment agent daily bookings counter
   UPDATE public.agents
   SET bookings_today = bookings_today + 1,
       updated_at = NOW()

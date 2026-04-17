@@ -58,13 +58,21 @@ serve(async (req: Request) => {
     const from = update.message.from
     const fullName = [from?.first_name, from?.last_name].filter(Boolean).join(' ') || 'Unknown'
     
+    // Check if we already have a real name for this customer (don't overwrite with Telegram username)
+    const { data: existingClient } = await supabase
+      .from('customers')
+      .select('full_name, phone')
+      .match({ user_id: userId, external_id: chatId.toString(), platform: 'telegram' })
+      .maybeSingle()
+
     const { error: crmError } = await supabase
       .from('customers')
       .upsert({
         user_id: userId,
         external_id: chatId.toString(),
         platform: 'telegram',
-        full_name: fullName,
+        full_name: existingClient?.full_name || fullName,
+        phone: existingClient?.phone || null,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,external_id,platform' })
     

@@ -29,6 +29,7 @@ export default function Sidebar({ profile, isAdmin }) {
     { to: '/bookings', icon: CalendarCheck, label: t('common.bookings') },
     { to: '/tickets', icon: MessageSquare, label: t('common.tickets') },
     { to: '/setup', icon: Settings, label: t('common.setup') },
+    { to: '/customers', icon: Users, label: t('common.customers') },
     { to: '/billing', icon: CreditCard, label: t('common.billing') },
   ];
 

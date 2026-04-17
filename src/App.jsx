@@ -10,6 +10,7 @@ import Bookings from './pages/Bookings';
 import Tickets from './pages/Tickets';
 import Integrations from './pages/Integrations';
 import Billing from './pages/Billing';
+import Customers from './pages/Customers';
 import HelpCenter from './pages/HelpCenter';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
@@ -47,6 +48,7 @@ const AppRoutes = () => {
       <Route path="/tickets" element={<ProtectedRoute><Layout><Tickets /></Layout></ProtectedRoute>} />
       <Route path="/integrations" element={<ProtectedRoute><Layout><Integrations /></Layout></ProtectedRoute>} />
       <Route path="/billing" element={<ProtectedRoute><Layout><Billing /></Layout></ProtectedRoute>} />
+      <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
       <Route path="/help" element={<ProtectedRoute><Layout><HelpCenter /></Layout></ProtectedRoute>} />
 
       {/* Admin Routes */}
