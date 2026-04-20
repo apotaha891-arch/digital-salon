@@ -7,13 +7,13 @@ import IntegrationsTab from './Setup/tabs/IntegrationsTab';
 import { Plug } from 'lucide-react';
 
 export default function Integrations() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   // Use the same hooks we created in Phase 3
   const { agent, loading: aLoading } = useAgent(user?.id);
   const { activeToolsMap, loading: iLoading, updateIntegration } = useIntegrations(user?.id);
 
-  const loading = aLoading || iLoading;
+  const loading = authLoading || aLoading || iLoading;
 
   if (loading) return <Spinner centered />;
 

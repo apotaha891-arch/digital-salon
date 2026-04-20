@@ -29,7 +29,9 @@
     "duration": "Duration",
     "name": "Name",
     "delete": "Delete",
-    "add": "Add"
+    "add": "Add",
+    "success_saved": "Settings saved successfully! ✨",
+    "error_failed": "Sorry, an error occurred while saving. Please try again."
   },
   "dashboard": {
     "stats": {
@@ -166,12 +168,16 @@
       "guide_4": "Disable 'Group Privacy' in Bot Settings."
     },
     "whatsapp": {
-      "name": "WhatsApp",
-      "phone_id_label": "Phone Number ID",
-      "token_label": "Access Token",
-      "guide_1": "Create a developer account at Meta for Developers.",
-      "guide_2": "Create a Business app and add WhatsApp product.",
-      "guide_3": "Get your Permanent Access Token and Phone ID from the dashboard."
+      "name": "WhatsApp (WPPConnect)",
+      "url_label": "Railway Server URL",
+      "token_label": "Secret Key",
+      "status_label": "Connection Status",
+      "connected": "Connected ✅",
+      "disconnected": "Disconnected ❌",
+      "get_qr": "Generate QR Code",
+      "guide_1": "Deploy WPPConnect on Railway as instructed.",
+      "guide_2": "Enter the Railway URL and Secret Key here.",
+      "guide_3": "Click 'Generate QR Code' and scan it with your phone."
     },
     "widget": {
       "name": "Website Widget",

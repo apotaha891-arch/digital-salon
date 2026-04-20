@@ -1,7 +1,57 @@
-// @ts-ignore
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-// @ts-ignore
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+// @ts-ignore: Deno standard library import
+import { serve } from "std/http/server"
+// @ts-ignore: Supabase client ESM import
+import { createClient, SupabaseClient } from "supabase"
+
+interface HistoryItem {
+  role: string;
+  content?: string;
+  parts?: GeminiPart[];
+}
+
+interface GeminiPart {
+  text?: string;
+  functionCall?: {
+    name: string;
+    args: Record<string, unknown>;
+  };
+  functionResponse?: {
+    name: string;
+    response: { content: unknown };
+  };
+}
+
+interface GeminiContent {
+  role: string;
+  parts: GeminiPart[];
+}
+
+interface GeminiCandidate {
+  content: GeminiContent;
+  finishReason?: string;
+}
+
+interface GeminiResponse {
+  candidates?: GeminiCandidate[];
+  error?: {
+    message: string;
+    code: number;
+    status: string;
+  };
+}
+
+interface GeminiTool {
+  function_declarations: {
+    name: string;
+    description: string;
+    parameters: {
+      type: string;
+      properties: Record<string, unknown>;
+      required: string[];
+    };
+  }[];
+}
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,9 +80,23 @@ serve(async (req: Request) => {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    const { platform, external_id, message, userId } = await req.json()
+    const payload = await req.json()
+    const { platform, external_id, message, userId } = payload
+    
+    console.log(`[BRAIN V3.4 - FINAL] Received payload for User: ${userId}, Platform: ${platform}, ExternalID: ${external_id}`)
+    console.log(`[BRAIN V3.4 - FINAL] Message Content: "${message}"`)
+
     if (!platform || !external_id || !message || !userId) {
+      console.error('[BRAIN ERROR] Missing required fields in payload:', JSON.stringify(payload))
       throw new Error('Missing fields: platform, external_id, message, userId')
+    }
+
+    // DIAGNOSTIC GUARD: Catch ManyChat placeholders
+    if (message === 'Last Text Input' || external_id === 'Contact Id') {
+      console.warn('[BRAIN WARNING] ManyChat is sending hardcoded placeholders instead of variables!')
+      return new Response(JSON.stringify({ 
+        response: "⚠️ خطأ في ماني شات: يرجى استبدال النصوص اليدوية بالمتغيرات الزرقاء (Variables) والضغط على Publish." 
+      }), { headers: corsHeaders });
     }
 
     // 1. Get Agent & Business Context
@@ -42,20 +106,54 @@ serve(async (req: Request) => {
     const agent = context.agent
     const business = context.business
 
-    // 2. Load History
+    // 2. Load History for ANTI-LOOP CHECK
     const { data: history } = await supabase.rpc('get_conversation_history', {
       p_user_id: userId,
       p_external_id: external_id,
       p_platform: platform
     })
 
-    // 3. Save User Message
-    const { data: conversation } = await supabase
+    // ANTI-LOOP: If the incoming message is identical to the last assistant response or last user message
+    if (history && history.length > 0 && history[0].content === message.trim()) {
+      console.log('[ANTI-LOOP] Ignoring identical repeated message.')
+      return new Response(JSON.stringify({ response: "" }), { headers: corsHeaders });
+    }
+
+    // 3. Save User Message & CRM Sync (24shift)
+    const { data: conversation, error: convError } = await supabase
       .from('conversations')
       .upsert({ user_id: userId, external_id, platform }, { onConflict: 'user_id,external_id,platform' })
       .select().single()
+    
+    if (convError) {
+      console.error('[CRM ERROR] Conversation Upsert Failed:', convError.message)
+      throw new Error(`Conversation storage failed: ${convError.message}`)
+    }
 
-    await supabase.from('messages').insert({ conversation_id: conversation.id, role: 'user', content: message })
+    // NEW CRM Sync: Update or Create Lead
+    const { error: custError } = await supabase.from('customers').upsert({
+      user_id: userId,
+      external_id: external_id,
+      platform: platform,
+      full_name: (history && history.length > 0) ? undefined : 'New Lead',
+      status: 'new',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id,external_id,platform' })
+
+    if (custError) {
+      console.error('[CRM ERROR] Customer Sync Failed:', custError.message)
+      // We don't throw here to allow the AI to still respond, but we log it
+    } else {
+      console.log('[CRM SUCCESS] Customer Synced Successfully.')
+    }
+
+    const { error: msgError } = await supabase.from('messages').insert({ 
+      conversation_id: conversation.id, 
+      role: 'user', 
+      content: message 
+    })
+    
+    if (msgError) console.error('[CRM ERROR] User Message Save Failed:', msgError.message)
 
     // 4. Define Tools
     const tools = [
@@ -111,13 +209,14 @@ serve(async (req: Request) => {
 اليوم هو ${todayGregorian} (ميلادي).
 مهمتك: مساعدة العملاء في معرفة الخدمات، الأسعار، وحجز المواعيد.
 
-القواعد:
+القواعد الصارمة:
 1. خاطبي العميلات دائمًا بلقب "يا مدام" أو "عزيزتي" لضمان الرقي والمهنية.
-2. كوني ودودة ومختصرة.
-3. التحقق من رقم الهاتف: يجب أن يتكون رقم الهاتف من (7 إلى 15 رقماً). إذا كان الرقم ناقصاً أو يبدو خاطئاً، اطلبي من العميلة بلباقة التأكد من صحته قبل المتابعة.
-4. قبل تأكيد أي حجز، استخدمي أداة (check_availability) للتأكد من توفر الموعد.
-4. إذا طلب العميل خدمة غير موجودة، اقترحي الخدمات المتاحة.
-5. استخدمي التاريخ الميلادي دائمًا في ردودك وأدواتك.
+2. كوني ودودة، إيجابية، ومختصرة جداً.
+3. التواضع التقني: لا تتحدثي أبداً عن "مشاكل تقنية" أو "أنظمة آلية" أو "تكرار عبارات" أمام العميلة. حتى إذا شعرتِ بوجود خطأ، تابعي المحادثة بأدب وقدمي المساعدة المتاحة.
+4. التحقق من رقم الهاتف: يجب أن يتكون رقم الهاتف من (7 إلى 15 رقماً). إذا كان الرقم ناقصاً أو يبدو خاطئاً، اطلبي من العميلة بلباقة التأكد من صحته قبل المتابعة.
+5. قبل تأكيد أي حجز، استخدمي أداة (check_availability) للتأكد من توفر الموعد.
+6. إذا طلب العميل خدمة غير موجودة، اقترحي الخدمات المتاحة.
+7. استخدمي التاريخ الميلادي دائمًا في ردودك وأدواتك.
 
 الخدمات المتاحة بأسعارها ومدتها:
 ${servicesContext}
@@ -126,18 +225,22 @@ ${servicesContext}
 ${agent.instructions || 'لا توجد تعليمات إضافية.'}`
 
     // 6. Call AI
-    const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase, platform)
-    console.log(`[BRAIN V3.1] Final aiResponse (Type: ${typeof aiResponse}):`, aiResponse)
+    const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase, platform, external_id)
     
-    // Save Response
-    await supabase.from('messages').insert({ 
+    // 5. Finalize Response
+    const finalResponse = aiResponse
+
+    // Save Assistant Message
+    const { error: assistantMsgError } = await supabase.from('messages').insert({ 
       conversation_id: conversation.id, 
       role: 'assistant', 
-      content: aiResponse || '(Empty response)' 
+      content: finalResponse 
     })
 
-    return new Response(JSON.stringify({ response: aiResponse || '' }), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-System-Version': 'V3.1-DIAG' } 
+    if (assistantMsgError) console.error('[CRM ERROR] Failed to save AI response:', assistantMsgError.message)
+
+    return new Response(JSON.stringify({ response: finalResponse }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
 
   } catch (error: unknown) {
@@ -149,7 +252,16 @@ ${agent.instructions || 'لا توجد تعليمات إضافية.'}`
   }
 })
 
-async function callGeminiDynamic(system: string, history: any[], userMessage: string, tools: any, userId: string, supabase: any, platform: string) {
+async function callGeminiDynamic(
+  system: string, 
+  history: HistoryItem[], 
+  userMessage: string, 
+  tools: GeminiTool[], 
+  userId: string, 
+  supabase: SupabaseClient, 
+  platform: string, 
+  external_id: string
+) {
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   console.log(`[DEBUG] Gemini API Key present: ${!!apiKey}`)
   
@@ -160,8 +272,9 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
     if (listData.error) {
       console.error('[DEBUG] Gemini List Models Error:', listData.error)
     }
-    availableModelIds = (listData.models || []).map((m: any) => m.name)
+    availableModelIds = (listData.models || []).map((m: { name: string }) => m.name)
     console.log(`[DEBUG] Found ${availableModelIds.length} models.`)
+
   } catch (e) {
     console.error('[DEBUG] Failed to fetch model list, using fallback.', e)
     availableModelIds = ["models/gemini-1.5-flash"]
@@ -224,14 +337,15 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
       }
       
       const messageBody = data.candidates[0].content
-      const parts = messageBody.parts || []
+      // const parts = messageBody.parts || [] // Removed unused variable
       
       // Tool Handling Loop (Max 5 iterations to avoid infinite loops)
       let currentMessageBody = messageBody
       let loopCount = 0
       
       while (loopCount < 5) {
-        const functionCallPart = currentMessageBody.parts?.find((p: any) => p.functionCall)
+        const functionCallPart = currentMessageBody.parts?.find((p: GeminiPart) => p.functionCall)
+
         if (!functionCallPart) break
         
         loopCount++
@@ -260,10 +374,12 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
             console.log(`[BOOKING] Success: ID ${data}`)
             result = { booking_id: data, status: 'success' }
           }
-        } catch (dbErr: any) {
-          console.error(`[TOOL ERROR] DB Error during ${fn.name}:`, dbErr.message)
-          result = { error: dbErr.message || "Database execution failed" }
+        } catch (dbErr: unknown) {
+          const dbErrorMessage = dbErr instanceof Error ? dbErr.message : String(dbErr)
+          console.error(`[TOOL ERROR] DB Error during ${fn.name}:`, dbErrorMessage)
+          result = { error: dbErrorMessage || "Database execution failed" }
         }
+
 
         console.log(`[TOOL RESULT] Sending back to AI:`, JSON.stringify(result))
 
@@ -273,8 +389,9 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
           body: JSON.stringify({ 
             contents: [
               ...contents, currentMessageBody, 
-              { role: 'function', parts: [{ functionResponse: { name: fn.name, response: { content: result } } } as any] }
+              { role: 'function', parts: [{ functionResponse: { name: fn.name, response: { content: result } } }] }
             ],
+
             tools, system_instruction 
           })
         })
@@ -288,21 +405,18 @@ async function callGeminiDynamic(system: string, history: any[], userMessage: st
         currentMessageBody = nextData.candidates?.[0]?.content
         if (!currentMessageBody) break
         
-        const textPart = currentMessageBody.parts?.map((p: any) => p.text || '').join('\n').trim()
+        const textPart = currentMessageBody.parts?.map((p: GeminiPart) => p.text || '').join('\n').trim()
         if (textPart) return textPart // AI finally returned text
       }
       
       const finalParts = currentMessageBody.parts || []
-      const finalText = finalParts.map((p: any) => p.text || '').join('\n').trim()
+      const finalText = finalParts.map((p: GeminiPart) => p.text || '').join('\n').trim()
       return finalText || "تمت معالجة طلبك بنجاح."
 
-      const fullText = parts.map((p: any) => p.text || '').join('\n').trim()
-      if (fullText) return fullText
-      continue
-
-    } catch (err: any) {
+    } catch (_err: unknown) {
       continue 
     }
+
   }
 
   return "عذراً، أواجه صعوبة مؤقتة في معالجة طلبك حالياً."

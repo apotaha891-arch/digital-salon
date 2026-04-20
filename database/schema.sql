@@ -111,9 +111,37 @@ DROP POLICY IF EXISTS "Users view own ledger" ON public.wallet_ledger;
 CREATE POLICY "Users view own ledger" ON public.wallet_ledger
   FOR SELECT USING (auth.uid() = user_id);
 
+  FOR SELECT USING (auth.uid() = user_id);
+
 
 -- ============================================
--- 5. BOOKINGS (Unified V3 — AI-Actionable)
+-- 5. CUSTOMERS (CRM - 24shift)
+-- ============================================
+CREATE TABLE IF NOT EXISTS public.customers (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- Salon owner
+  external_id     TEXT NOT NULL,   -- WhatsApp number, ManyChat ID, etc.
+  platform        TEXT NOT NULL,   -- 'whatsapp' | 'instagram' | 'messenger'
+  full_name       TEXT,
+  phone           TEXT,
+  status          TEXT DEFAULT 'new', -- 'new' | 'interested' | 'booked' | 'paid'
+  notes           TEXT,
+  metadata        JSONB DEFAULT '{}',
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, external_id, platform)
+);
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users manage own customers" ON public.customers;
+CREATE POLICY "Users manage own customers" ON public.customers
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Performance Index
+CREATE INDEX IF NOT EXISTS idx_customers_user_external ON public.customers(user_id, external_id);
+
+
+-- ============================================
+-- 6. BOOKINGS (Unified V3 — AI-Actionable)
 --    DROP old table first to remove schema conflicts.
 -- ============================================
 DROP TABLE IF EXISTS public.bookings CASCADE;

@@ -3,12 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { 
   HelpCircle, X, Check, Copy, Send, MessageCircle, Globe 
 } from 'lucide-react';
+import { supabase } from '../../../services/supabase';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function IntegrationsTab({ activeTools, agentId, agentName, onToolSave }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [showGuide, setShowGuide] = useState(null);
   const [copied, setCopied] = useState(false);
   const [localConfigs, setLocalConfigs] = useState(activeTools || {});
+  const [qrCode, setQrCode] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
+
+  console.log('[DEBUG] IntegrationsTab User:', user?.id);
 
   const INTEGRATION_TOOLS = [
     {
@@ -31,15 +38,16 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
       icon: MessageCircle,
       color: '#25D366',
       fields: [
-        { name: 'phone_id', label: t('integrations.whatsapp.phone_id_label'), placeholder: '00000000000' },
-        { name: 'token', label: t('integrations.whatsapp.token_label'), placeholder: 'EAAB...' }
+        { name: 'url', label: t('integrations.whatsapp.url_label'), placeholder: 'https://....railway.app' },
+        { name: 'token', label: t('integrations.whatsapp.token_label'), placeholder: 'Secret Key' },
+        { name: 'session', label: 'Session Name', placeholder: 'default' }
       ],
       guide: [
         t('integrations.whatsapp.guide_1'),
         t('integrations.whatsapp.guide_2'),
         t('integrations.whatsapp.guide_3')
       ],
-      checkLink: (conf) => !!conf.token && !!conf.phone_id
+      checkLink: (conf) => !!conf.token && !!conf.url
     },
     {
       id: 'widget',
@@ -57,6 +65,21 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
         t('integrations.widget.guide_3')
       ],
       checkLink: (conf) => !!conf.domain
+    },
+    {
+      id: 'manychat',
+      name: 'ManyChat & Social CRM',
+      icon: Check,
+      color: '#0084FF',
+      fields: [
+        { name: 'apiKey', label: 'ManyChat API Key', placeholder: 'MC-...' },
+      ],
+      guide: [
+        'Connect Instagram/Messenger via ManyChat',
+        'Sync leads directly to your Salon CRM',
+        'Enable AI automation for social media'
+      ],
+      checkLink: (conf) => !!conf.apiKey
     }
   ];
 
@@ -120,7 +143,14 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                 ))}
               </div>
               <button 
-                onClick={() => onToolSave(tool.id, config)} 
+                onClick={async () => {
+                  try {
+                    await onToolSave(tool.id, config);
+                    alert('✅ ' + t('common.success_saved') || 'Settings saved successfully!');
+                  } catch (e) {
+                    alert('❌ Save failed: ' + e.message);
+                  }
+                }} 
                 className="btn btn-primary btn-sm btn-full" 
                 style={{ fontSize: 11, marginBottom: 8 }}
               >
@@ -129,10 +159,74 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
               <button 
                 onClick={() => setShowGuide(tool.id)} 
                 className="btn btn-secondary btn-sm btn-full" 
-                style={{ fontSize: 11, opacity: 0.7 }}
+                style={{ fontSize: 11, opacity: 0.7, marginBottom: tool.id === 'whatsapp' ? 8 : 0 }}
               >
                 <HelpCircle size={14} style={{ marginRight: 4 }} /> {t('integrations.how_to_link')}
               </button>
+
+              {tool.id === 'whatsapp' && (
+                <button 
+                  onClick={async () => {
+                    if (!user?.id) {
+                      alert('Session missing. Please logout and login again.');
+                      return;
+                    }
+                    setQrLoading(true);
+                    setQrCode(null);
+                    try {
+                      const config = localConfigs.whatsapp || {};
+                      const sessionName = config.session || 'default';
+
+                      // AUTO-SAVE first to ensure DB has the latest keys
+                      await onToolSave('whatsapp', config);
+                      
+                      const { data, error } = await supabase.functions.invoke(
+                        `whatsapp-manager?action=start-session&userId=${user.id}&session=${sessionName}`, 
+                        { method: 'POST' }
+                      );
+
+                      if (error) throw error;
+
+                      if (data.error) {
+                        alert(`${data.error}${data.details ? `\n\nDiagnostic: ${data.details}` : ''}`);
+                        return;
+                      }
+
+                      if (data.qrcode) {
+                        setQrCode(data.qrcode);
+                        setShowGuide('whatsapp');
+                      } else if (data.status === 'CONNECTED') {
+                        alert(t('integrations.whatsapp.connected'));
+                      } else if (data.status === 'QRCODE' && data.qrcode) {
+                        setQrCode(data.qrcode);
+                        setShowGuide('whatsapp');
+                      } else {
+                        console.log('[DEBUG] Full Response Data:', data);
+                        alert(`Session Status: ${data.status || 'Success'}\n\nNo QR code found in payload. Raw Data:\n${JSON.stringify(data, null, 2)}`);
+                      }
+                    } catch (e) {
+                      console.error('Final Proxy Error:', e);
+                      let msg = e.message;
+                      // Try to extract JSON if it was a FunctionsHttpError
+                      if (e.context) {
+                        try {
+                          const errJson = await e.context.json();
+                          msg = errJson.error || msg;
+                          if (errJson.details) msg += `\n\nDetails: ${errJson.details}`;
+                        } catch (inner) {}
+                      }
+                      alert(`Connection failed: ${msg}`);
+                    } finally {
+                      setQrLoading(false);
+                    }
+                  }} 
+                  className="btn btn-accent btn-sm btn-full" 
+                  style={{ fontSize: 11 }}
+                  disabled={qrLoading || !isLinked}
+                >
+                  {qrLoading ? '...' : (qrCode ? 'Refetch QR' : t('integrations.whatsapp.get_qr'))}
+                </button>
+              )}
             </div>
           );
         })}
@@ -167,6 +261,53 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                     <pre style={{ fontSize: 11, overflow: 'auto', padding: 12 }}>{embedCode}</pre>
                  </div>
                ) : null}
+
+               {currentTool.id === 'whatsapp' && qrCode && (
+                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+                   <div className="qr-container glass-card" style={{ padding: 16 }}>
+                     <img src={qrCode} alt="WhatsApp QR" style={{ width: 256, height: 256, display: 'block' }} />
+                   </div>
+                   <p style={{ textAlign: 'center', opacity: 0.7, fontSize: 13 }}>
+                     {t('integrations.whatsapp.scan_instruction')}
+                   </p>
+                 </div>
+               )}
+
+               {currentTool.id === 'manychat' && (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                   <div style={{ background: 'rgba(0,132,255,0.05)', padding: 20, borderRadius: 16, border: '1px border rgba(0,132,255,0.1)' }}>
+                     <h4 style={{ color: '#0084FF', marginBottom: 12 }}>ManyChat Connection Details</h4>
+                     <p style={{ fontSize: 13, marginBottom: 16 }}>Use these details in your ManyChat "External Request" block:</p>
+                     
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                       <div className="code-box" style={{ padding: '12px 16px', position: 'relative' }}>
+                         <span style={{ fontSize: 10, opacity: 0.5, display: 'block' }}>SUPABASE URL</span>
+                         <code style={{ fontSize: 12 }}>{import.meta.env.VITE_SUPABASE_URL}</code>
+                       </div>
+                       <div className="code-box" style={{ padding: '12px 16px', position: 'relative' }}>
+                         <span style={{ fontSize: 10, opacity: 0.5, display: 'block' }}>API KEY (Service Role/Anon)</span>
+                         <code style={{ fontSize: 10 }}>{import.meta.env.VITE_SUPABASE_ANON_KEY}</code>
+                       </div>
+                       <div className="code-box" style={{ padding: '12px 16px', position: 'relative' }}>
+                         <span style={{ fontSize: 10, opacity: 0.5, display: 'block' }}>YOUR OWNER ID (user_id)</span>
+                         <code style={{ fontSize: 12 }}>{user?.id}</code>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                     <p style={{ fontWeight: 600, fontSize: 14 }}>🚀 Implementation Steps:</p>
+                     <ul style={{ fontSize: 13, paddingRight: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                       <li>1. Open ManyChat Flow Builder.</li>
+                       <li>2. Add an "External Request" block.</li>
+                       <li>3. Method: <b>POST</b></li>
+                       <li>4. URL: <code>{import.meta.env.VITE_SUPABASE_URL}/rest/v1/customers</code></li>
+                       <li>5. Add Headers: <code>apikey</code> and <code>Authorization: Bearer [KEY]</code></li>
+                       <li>6. Body (JSON): Map <code>user_id</code>, <code>full_name</code>, and <code>platform</code>.</li>
+                     </ul>
+                   </div>
+                 </div>
+               )}
                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {currentTool.guide.map((step, idx) => (
                   <div key={idx} style={{ display: 'flex', gap: 16 }}>

@@ -20,3 +20,26 @@ export const deleteCustomer = async (id) => {
   if (error) throw error;
   return true;
 };
+
+export const getCustomerMessages = async (userId, externalId, platform) => {
+  // 1. Find the conversation ID
+  const { data: conv, error: convError } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('external_id', externalId)
+    .eq('platform', platform)
+    .single();
+
+  if (convError || !conv) return [];
+
+  // 2. Fetch all messages for this conversation
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', conv.id)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return data;
+};

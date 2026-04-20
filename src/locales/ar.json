@@ -29,7 +29,9 @@
     "duration": "المدة",
     "name": "الاسم",
     "delete": "حذف",
-    "add": "إضافة"
+    "add": "إضافة",
+    "success_saved": "تم حفظ الإعدادات بنجاح! ✨",
+    "error_failed": "عذراً، حدث خطأ أثناء الحفظ. يرجى المحاولة مرة أخرى."
   },
   "dashboard": {
     "stats": {
@@ -166,12 +168,16 @@
       "guide_4": "اذهب إلى Bot Settings ثم Group Privacy وقم بتعطيله (Disabled)."
     },
     "whatsapp": {
-      "name": "واتساب",
-      "phone_id_label": "معرف الهاتف",
-      "token_label": "مفتاح الوصول",
-      "guide_1": "قم بإنشاء حساب مطورين في Meta for Developers.",
-      "guide_2": "أنشئ تطبيقاً من نوع Business وأضف Whatsapp كمنتج أساسي.",
-      "guide_3": "احصل على مفتاح الوصول الدائم ومعرف الهاتف من لوحة التحكم."
+      "name": "واتساب (WPPConnect)",
+      "url_label": "رابط سيرفر Railway",
+      "token_label": "المفتاح السري (Secret Key)",
+      "status_label": "حالة الاتصال",
+      "connected": "متصل ✅",
+      "disconnected": "غير متصل ❌",
+      "get_qr": "توليد كود QR",
+      "guide_1": "قم برفع سيرفر WPPConnect على Railway كما تم شرحه.",
+      "guide_2": "أدخل رابط السيرفر والمفتاح السري هنا.",
+      "guide_3": "اضغط على زر 'توليد كود QR' وامسح الكود بجوالك لربط الحساب."
     },
     "widget": {
       "name": "ويدجت الموقع",
