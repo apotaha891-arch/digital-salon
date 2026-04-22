@@ -73,30 +73,21 @@ serve(async (req: Request) => {
 
     // 1. Internal Security Check
     const authHeader = req.headers.get('Authorization')
-    // serviceRoleKey was fetched above
-    
     if (authHeader !== `Bearer ${serviceRoleKey}`) {
       console.error('Unauthorized internal call attempt (Key mismatch)')
       return new Response('Unauthorized', { status: 401 })
     }
 
     const payload = await req.json()
-    const { platform, external_id, message, userId } = payload
+    const { platform, external_id, message, userId, name } = payload
     
-    console.log(`[BRAIN V3.4 - FINAL] Received payload for User: ${userId}, Platform: ${platform}, ExternalID: ${external_id}`)
-    console.log(`[BRAIN V3.4 - FINAL] Message Content: "${message}"`)
+    console.log(`[BRAIN] Processing for User: ${userId}, Platform: ${platform}, ExternalID: ${external_id}`)
+    if (name) console.log(`[BRAIN] Customer Name: ${name}`)
+
 
     if (!platform || !external_id || !message || !userId) {
-      console.error('[BRAIN ERROR] Missing required fields in payload:', JSON.stringify(payload))
+      console.error('[BRAIN ERROR] Missing required fields:', JSON.stringify(payload))
       throw new Error('Missing fields: platform, external_id, message, userId')
-    }
-
-    // DIAGNOSTIC GUARD: Catch ManyChat placeholders
-    if (message === 'Last Text Input' || external_id === 'Contact Id') {
-      console.warn('[BRAIN WARNING] ManyChat is sending hardcoded placeholders instead of variables!')
-      return new Response(JSON.stringify({ 
-        response: "⚠️ خطأ في ماني شات: يرجى استبدال النصوص اليدوية بالمتغيرات الزرقاء (Variables) والضغط على Publish." 
-      }), { headers: corsHeaders });
     }
 
     // 1. Get Agent & Business Context
@@ -106,56 +97,50 @@ serve(async (req: Request) => {
     const agent = context.agent
     const business = context.business
 
-    // 2. Load History for ANTI-LOOP CHECK
+    // 2. Load History
     const { data: history } = await supabase.rpc('get_conversation_history', {
       p_user_id: userId,
       p_external_id: external_id,
       p_platform: platform
     })
 
-    // ANTI-LOOP: If the incoming message is identical to the last assistant response or last user message
-    if (history && history.length > 0 && history[0].content === message.trim()) {
-      console.log('[ANTI-LOOP] Ignoring identical repeated message.')
-      return new Response(JSON.stringify({ response: "" }), { headers: corsHeaders });
+    // ANTI-LOOP: Prevent double-responses within a short window
+    if (history && history.length > 0) {
+      const lastMessage = history[0]
+      const isRepeat = lastMessage.role === 'user' && lastMessage.content === message.trim();
+      const messageAgeMs = lastMessage.created_at ? (Date.now() - new Date(lastMessage.created_at).getTime()) : 999999;
+      
+      if (isRepeat && messageAgeMs < 30000) {
+        console.log(`[ANTI-LOOP] Ignoring duplicate message (Age: ${messageAgeMs}ms)`)
+        return new Response(JSON.stringify({ response: "" }), { headers: corsHeaders });
+      }
     }
 
-    // 3. Save User Message & CRM Sync (24shift)
+    // 3. Save User Message & CRM Sync
     const { data: conversation, error: convError } = await supabase
       .from('conversations')
       .upsert({ user_id: userId, external_id, platform }, { onConflict: 'user_id,external_id,platform' })
       .select().single()
     
-    if (convError) {
-      console.error('[CRM ERROR] Conversation Upsert Failed:', convError.message)
-      throw new Error(`Conversation storage failed: ${convError.message}`)
-    }
+    if (convError) throw new Error(`Conversation storage failed: ${convError.message}`)
 
-    // NEW CRM Sync: Update or Create Lead
-    const { error: custError } = await supabase.from('customers').upsert({
+    // CRM Sync: Update Lead
+    await supabase.from('customers').upsert({
       user_id: userId,
       external_id: external_id,
       platform: platform,
-      full_name: (history && history.length > 0) ? undefined : 'New Lead',
+      full_name: name || ((history && history.length > 0) ? undefined : 'New Lead'),
       status: 'new',
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id,external_id,platform' })
 
-    if (custError) {
-      console.error('[CRM ERROR] Customer Sync Failed:', custError.message)
-      // We don't throw here to allow the AI to still respond, but we log it
-    } else {
-      console.log('[CRM SUCCESS] Customer Synced Successfully.')
-    }
-
-    const { error: msgError } = await supabase.from('messages').insert({ 
+    await supabase.from('messages').insert({ 
       conversation_id: conversation.id, 
       role: 'user', 
       content: message 
     })
     
-    if (msgError) console.error('[CRM ERROR] User Message Save Failed:', msgError.message)
-
-    // 4. Define Tools
+    // 4. Define AI Tools (Simplified for direct flow)
     const tools = [
       {
         function_declarations: [
@@ -212,11 +197,8 @@ serve(async (req: Request) => {
 القواعد الصارمة:
 1. خاطبي العميلات دائمًا بلقب "يا مدام" أو "عزيزتي" لضمان الرقي والمهنية.
 2. كوني ودودة، إيجابية، ومختصرة جداً.
-3. التواضع التقني: لا تتحدثي أبداً عن "مشاكل تقنية" أو "أنظمة آلية" أو "تكرار عبارات" أمام العميلة. حتى إذا شعرتِ بوجود خطأ، تابعي المحادثة بأدب وقدمي المساعدة المتاحة.
-4. التحقق من رقم الهاتف: يجب أن يتكون رقم الهاتف من (7 إلى 15 رقماً). إذا كان الرقم ناقصاً أو يبدو خاطئاً، اطلبي من العميلة بلباقة التأكد من صحته قبل المتابعة.
-5. قبل تأكيد أي حجز، استخدمي أداة (check_availability) للتأكد من توفر الموعد.
-6. إذا طلب العميل خدمة غير موجودة، اقترحي الخدمات المتاحة.
-7. استخدمي التاريخ الميلادي دائمًا في ردودك وأدواتك.
+3. التحقق من رقم الهاتف: يجب أن يتكون رقم الهاتف من (7 إلى 15 رقماً). إذا كان الرقم ناقصاً أو يبدو خاطئاً، اطلبي من العميلة بلباقة التأكد من صحته قبل المتابعة.
+4. استخدمي التاريخ الميلادي دائمًا في ردودك وأدواتك.
 
 الخدمات المتاحة بأسعارها ومدتها:
 ${servicesContext}
@@ -227,21 +209,25 @@ ${agent.instructions || 'لا توجد تعليمات إضافية.'}`
     // 6. Call AI
     const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase, platform, external_id)
     
-    // 5. Finalize Response
-    const finalResponse = aiResponse
-
     // Save Assistant Message
-    const { error: assistantMsgError } = await supabase.from('messages').insert({ 
+    await supabase.from('messages').insert({ 
       conversation_id: conversation.id, 
       role: 'assistant', 
-      content: finalResponse 
-    })
+    console.log(`[PUSH CHECK] Platform: ${platformLower}, TokenExists: ${!!manyChatToken}, ExternalID: ${external_id}`)
 
-    if (assistantMsgError) console.error('[CRM ERROR] Failed to save AI response:', assistantMsgError.message)
+    if (platformLower === 'instagram' && manyChatToken && external_id) {
+      // Must AWAIT to ensure the message is actually sent before the function terminates
+      await sendManyChatResponse(manyChatToken, external_id, finalResponse)
+    } else if (platformLower === 'instagram' && !manyChatToken) {
+
+      console.warn('[PUSH ERROR] ManyChat Token is missing in Environment Variables!')
+    }
 
     return new Response(JSON.stringify({ response: finalResponse }), { 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
+
+
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -263,28 +249,26 @@ async function callGeminiDynamic(
   external_id: string
 ) {
   const apiKey = Deno.env.get('GEMINI_API_KEY')
-  console.log(`[DEBUG] Gemini API Key present: ${!!apiKey}`)
   
   let availableModelIds: string[] = []
   try {
+    console.log('[DEBUG] Fetching available models for API Key...')
     const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
     const listData = await listRes.json()
     if (listData.error) {
-      console.error('[DEBUG] Gemini List Models Error:', listData.error)
+      console.error('[GEMINI LIST ERROR]', JSON.stringify(listData.error))
+      availableModelIds = ["models/gemini-1.5-flash"] // Fallback if listing fails
+    } else {
+      availableModelIds = (listData.models || []).map((m: { name: string }) => m.name)
+      console.log(`[DEBUG] Found ${availableModelIds.length} available models.`)
     }
-    availableModelIds = (listData.models || []).map((m: { name: string }) => m.name)
-    console.log(`[DEBUG] Found ${availableModelIds.length} models.`)
-
   } catch (e) {
     console.error('[DEBUG] Failed to fetch model list, using fallback.', e)
     availableModelIds = ["models/gemini-1.5-flash"]
   }
 
   const priorityKeywords = [
-    'gemini-3.1-pro', 
-    'gemini-3-flash', 
-    'gemini-2.5-flash', 
-    'gemini-2-flash', 
+    'gemini-2.0-flash', 
     'gemini-1.5-pro', 
     'gemini-1.5-flash'
   ]
@@ -292,7 +276,6 @@ async function callGeminiDynamic(
   const sortedModels = availableModelIds
     .filter(id => priorityKeywords.some(kw => id.toLowerCase().includes(kw)))
     .sort((a, b) => {
-      // Find the index of the matching keyword to determine priority
       const getPriority = (id: string) => {
         const index = priorityKeywords.findIndex(kw => id.toLowerCase().includes(kw));
         return index === -1 ? 999 : index;
@@ -301,40 +284,51 @@ async function callGeminiDynamic(
     });
 
   if (sortedModels.length === 0) {
-    console.warn('[DEBUG] No priority models found in list, adding common defaults.')
-    sortedModels.push("models/gemini-2.0-flash", "models/gemini-1.5-flash")
+    sortedModels.push("models/gemini-1.5-flash")
   }
 
-  console.log(`[DEBUG] Final sorted models to try: ${sortedModels.join(', ')}`)
+  let lastError = "No models available"
 
   for (const modelId of sortedModels) {
     try {
       const baseUrl = `https://generativelanguage.googleapis.com/v1beta/${modelId}:generateContent`
-      const system_instruction = { parts: [{ text: system }] }
-      const chatHistory = history.slice(0, 10).reverse().map(m => ({
+      
+      // Compatibility: Simplest payload structure (No system_instruction field)
+      const systemMessage = { role: 'user', parts: [{ text: `SYSTEM INSTRUCTIONS: ${system}` }] }
+      const systemAck = { role: 'model', parts: [{ text: "Understood. I will act according to these instructions." }] }
+
+      const chatHistory = (history || []).slice(0, 10).reverse().map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: (m.content || "").substring(0, 2000) }]
       }))
-      const contents = [...chatHistory, { role: 'user', parts: [{ text: userMessage }] }]
+      
+      const contents = [systemMessage, systemAck, ...chatHistory, { role: 'user', parts: [{ text: userMessage }] }]
 
+      console.log(`[DEBUG] Attempting simplified call to model: ${modelId}`)
+      
       const res = await fetch(`${baseUrl}?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          contents, tools, system_instruction, 
-          tool_config: { function_calling_config: { mode: "AUTO" } } 
+          contents, 
+          tools: tools && tools.length > 0 ? tools : undefined
         })
       })
 
+
       const data = await res.json()
       if (data.error) {
-        console.error(`[DEBUG] Gemini Generate Error (${modelId}):`, JSON.stringify(data.error))
+        lastError = `[GEMINI ${modelId}] ${data.error.message || JSON.stringify(data.error)}`
+        console.error(`[GEMINI ERROR] ${modelId}:`, lastError)
         continue
       }
       if (!data.candidates || data.candidates.length === 0) {
-        console.warn(`[DEBUG] Gemini No Candidates (${modelId}):`, JSON.stringify(data))
+        lastError = `[GEMINI ${modelId}] No candidates returned`
         continue
       }
+
+
+
       
       const messageBody = data.candidates[0].content
       // const parts = messageBody.parts || [] // Removed unused variable
@@ -392,7 +386,7 @@ async function callGeminiDynamic(
               { role: 'function', parts: [{ functionResponse: { name: fn.name, response: { content: result } } }] }
             ],
 
-            tools, system_instruction 
+            tools 
           })
         })
         
@@ -413,11 +407,14 @@ async function callGeminiDynamic(
       const finalText = finalParts.map((p: GeminiPart) => p.text || '').join('\n').trim()
       return finalText || "تمت معالجة طلبك بنجاح."
 
-    } catch (_err: unknown) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      lastError = `[CRITICAL ${modelId}] ${msg}`
       continue 
     }
-
   }
 
-  return "عذراً، أواجه صعوبة مؤقتة في معالجة طلبك حالياً."
+  // If everything fails, provide a friendly message but keep the tech error in logs
+  return "عذراً، أواجه صعوبة مؤقتة في معالجة طلبك حالياً. الفنيون يعملون لإصلاح الأمر."
 }
+

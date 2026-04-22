@@ -35,3 +35,6 @@ Thumbs.db
 
 # Gemini / AI context
 .gemini/
+
+.vercel
+.env*.local
