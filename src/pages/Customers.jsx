@@ -116,7 +116,7 @@ export default function Customers() {
                         <Camera size={12} style={{ marginInlineEnd: 4 }} /> Instagram
                       </Badge>
                     )}
-                    {customer.platform === 'messenger' && (
+                    {(customer.platform === 'messenger' || customer.platform === 'facebook') && (
                       <Badge variant="custom" size="sm" style={{ backgroundColor: '#0084FF', color: 'white' }}>
                         <MessageCircle size={12} style={{ marginInlineEnd: 4 }} /> Messenger
                       </Badge>

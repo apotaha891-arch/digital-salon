@@ -210,21 +210,14 @@ ${agent.instructions || 'لا توجد تعليمات إضافية.'}`
     const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase, platform, external_id)
     
     // Save Assistant Message
-    await supabase.from('messages').insert({ 
-      conversation_id: conversation.id, 
-      role: 'assistant', 
-    console.log(`[PUSH CHECK] Platform: ${platformLower}, TokenExists: ${!!manyChatToken}, ExternalID: ${external_id}`)
+    await supabase.from('messages').insert({
+      conversation_id: conversation.id,
+      role: 'assistant',
+      content: aiResponse
+    })
 
-    if (platformLower === 'instagram' && manyChatToken && external_id) {
-      // Must AWAIT to ensure the message is actually sent before the function terminates
-      await sendManyChatResponse(manyChatToken, external_id, finalResponse)
-    } else if (platformLower === 'instagram' && !manyChatToken) {
-
-      console.warn('[PUSH ERROR] ManyChat Token is missing in Environment Variables!')
-    }
-
-    return new Response(JSON.stringify({ response: finalResponse }), { 
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    return new Response(JSON.stringify({ response: aiResponse }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
 
@@ -268,8 +261,12 @@ async function callGeminiDynamic(
   }
 
   const priorityKeywords = [
-    'gemini-2.0-flash', 
-    'gemini-1.5-pro', 
+    'gemini-3.1-pro',
+    'gemini-3-flash',
+    'gemini-3.0-flash',
+    'gemini-2.5-pro',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
     'gemini-1.5-flash'
   ]
   
@@ -284,7 +281,7 @@ async function callGeminiDynamic(
     });
 
   if (sortedModels.length === 0) {
-    sortedModels.push("models/gemini-1.5-flash")
+    sortedModels.push("models/gemini-2.5-flash")
   }
 
   let lastError = "No models available"

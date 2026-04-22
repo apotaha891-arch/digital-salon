@@ -25,21 +25,35 @@ serve(async (req) => {
       console.log("[META] Webhook Verified.")
       return new Response(challenge, { status: 200 })
     }
+
     return new Response("Forbidden", { status: 403 })
   }
 
-    // 2. HANDLE INCOMING MESSAGES (POST)
+  // 2. HANDLE INCOMING MESSAGES (POST)
   try {
-    const body = await req.text()
-    const payload = JSON.parse(body)
+    const bodyBuffer = await req.arrayBuffer()
+    const signature = req.headers.get("x-hub-signature-256")
+    
+    // HMAC Signature Verification (warn-only — never blocks message processing)
+    if (signature) {
+      const isValid = await verifyMetaSignature(bodyBuffer, signature)
+      if (!isValid) {
+        console.warn("[META SECURITY] HMAC mismatch — logging only, continuing.")
+      }
+    }
+    
+    const bodyText = new TextDecoder().decode(bodyBuffer)
+    const payload = JSON.parse(bodyText)
     
     // [DIAGNOSTIC LOG] Save raw payload to database
     await supabase.from('webhook_logs').insert({ payload })
 
     console.log("[META] Received Payload:", JSON.stringify(payload))
 
-    // INSTAGRAM HANDLER
-    if (payload.object === "instagram") {
+    // INSTAGRAM & FACEBOOK MESSENGER HANDLER
+    if (payload.object === "instagram" || payload.object === "page") {
+      const platform = payload.object === "page" ? "facebook" : "instagram";
+      
       for (const entry of payload.entry || []) {
         for (const messaging of entry.messaging || []) {
           const externalId = messaging.sender?.id
@@ -47,16 +61,16 @@ serve(async (req) => {
           
           if (messaging.message && !messaging.message.is_echo) {
             messageText = messaging.message.text
-            console.log(`[META] New IG Message from ${externalId}: ${messageText}`)
+            console.log(`[META] New ${platform.toUpperCase()} Message from ${externalId}: ${messageText}`)
           } else if (messaging.message_edit) {
             messageText = messaging.message_edit.text
-            console.log(`[META] IG Message EDIT from ${externalId}: ${messageText}`)
+            console.log(`[META] ${platform.toUpperCase()} Message EDIT from ${externalId}: ${messageText}`)
           }
 
           if (externalId && messageText) {
-            await routeToBrainAndRespond("instagram", externalId, messageText)
+            await routeToBrainAndRespond(platform, externalId, messageText)
           } else {
-            console.log(`[META] Skipping IG payload (missing sender.id or text). Full object:`, JSON.stringify(messaging))
+            console.log(`[META] Skipping ${platform.toUpperCase()} payload (missing sender.id or text). Full object:`, JSON.stringify(messaging))
           }
         }
       }
@@ -132,8 +146,8 @@ async function routeToBrainAndRespond(platform: string, externalId: string, mess
 
     if (aiText) {
       console.log(`[META] AI Response obtained: "${aiText}". Sending back to ${platform}...`)
-      if (platform === "instagram") {
-        await sendInstagramMessage(externalId, aiText)
+      if (platform === "instagram" || platform === "facebook") {
+        await sendMessengerMessage(externalId, aiText, platform)
       } else if (platform === "whatsapp") {
         await sendWhatsAppMessage(externalId, aiText)
       }
@@ -145,8 +159,13 @@ async function routeToBrainAndRespond(platform: string, externalId: string, mess
   }
 }
 
-async function sendInstagramMessage(recipientId: string, text: string) {
-  const url = `https://graph.facebook.com/v21.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`
+async function sendMessengerMessage(recipientId: string, text: string, platform: string) {
+  // Use specific INSTAGRAM_PAGE_TOKEN if it's IG, otherwise fallback correctly to standard PAGE_ACCESS_TOKEN
+  const TOKEN = platform === "instagram" 
+    ? (Deno.env.get("INSTAGRAM_PAGE_TOKEN") || PAGE_ACCESS_TOKEN) 
+    : PAGE_ACCESS_TOKEN;
+    
+  const url = `https://graph.facebook.com/v21.0/me/messages?access_token=${TOKEN}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -156,12 +175,13 @@ async function sendInstagramMessage(recipientId: string, text: string) {
     })
   })
   const data = await res.json()
-  console.log("[IG SEND RESULT]", JSON.stringify(data))
+  console.log(`[${platform.toUpperCase()} SEND RESULT]`, JSON.stringify(data))
 }
 
 async function sendWhatsAppMessage(recipientId: string, text: string) {
   // Simple text back via WhatsApp Business Cloud API
-  const url = `https://graph.facebook.com/v21.0/${Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")}/messages?access_token=${PAGE_ACCESS_TOKEN}`
+  const WA_TOKEN = Deno.env.get("WHATSAPP_TOKEN") || PAGE_ACCESS_TOKEN;
+  const url = `https://graph.facebook.com/v21.0/${Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")}/messages?access_token=${WA_TOKEN}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -176,3 +196,42 @@ async function sendWhatsAppMessage(recipientId: string, text: string) {
   const data = await res.json()
   console.log("[WA SEND RESULT]", JSON.stringify(data))
 }
+
+// Phase 3 Security: Verify HMAC Signature of the Meta payload
+async function verifyMetaSignature(bodyBuffer: ArrayBuffer, signature: string): Promise<boolean> {
+  const secret = Deno.env.get("META_APP_SECRET");
+  if (!secret) {
+    console.error("[META SECURITY] Missing META_APP_SECRET in environment");
+    return false;
+  }
+  
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign("HMAC", key, bodyBuffer);
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const expectedHash = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    const passedHash = signature.replace("sha256=", "").trim();
+    
+    if (expectedHash !== passedHash) {
+      console.error(`[META SECURITY] Check Failed. Expected: ${expectedHash} | Received: ${passedHash}`);
+      // Diagnostic log of exact payload length to check for mangling
+      console.error(`[META SECURITY] Body length: ${bodyBuffer.byteLength}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[META SECURITY] Error verifying signature:", err);
+    return false;
+  }
+}
+
+
