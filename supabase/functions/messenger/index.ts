@@ -97,6 +97,12 @@ serve(async (req: Request) => {
     const agent = context.agent
     const business = context.business
 
+    // ENFORCE AGENT STATUS (Do not reply if paused)
+    if (agent.is_active === false) {
+      console.log(`[BRAIN] Agent ${agent.name} is paused. Ignoring message.`);
+      return new Response(JSON.stringify({ response: "" }), { headers: corsHeaders });
+    }
+
     // 2. Load History
     const { data: history } = await supabase.rpc('get_conversation_history', {
       p_user_id: userId,
@@ -197,8 +203,9 @@ serve(async (req: Request) => {
 القواعد الصارمة:
 1. خاطبي العميلات دائمًا بلقب "يا مدام" أو "عزيزتي" لضمان الرقي والمهنية.
 2. كوني ودودة، إيجابية، ومختصرة جداً.
-3. التحقق من رقم الهاتف: يجب أن يتكون رقم الهاتف من (7 إلى 15 رقماً). إذا كان الرقم ناقصاً أو يبدو خاطئاً، اطلبي من العميلة بلباقة التأكد من صحته قبل المتابعة.
+3. التحقق من رقم الهاتف: يجب أن يتكون رقم الهاتف من (7 إلى 15 رقماً). إذا كان الرقم ناقصاً، استخدمي مفتاح دولة رقم هاتف الصالون (${business.phone || 'غير محدد'}) كمرجع للتأكد من توافق الرقم مع الدولة.
 4. استخدمي التاريخ الميلادي دائمًا في ردودك وأدواتك.
+5. لغة المحادثة: يجب عليك مطابقة لغة العميل حرفياً (اللغة الإنجليزية للإنجليزية، التركية للتركية، إلخ). لا تقومي أبداً بالرد بالعربية إذا كان العميل يتحدث لغة أخرى.
 
 الخدمات المتاحة بأسعارها ومدتها:
 ${servicesContext}
@@ -214,6 +221,21 @@ ${agent.instructions || 'لا توجد تعليمات إضافية.'}`
       conversation_id: conversation.id,
       role: 'assistant',
       content: aiResponse
+    })
+
+    // 7. Deduct Wallet Tokens 
+    let tokenCost = 1;
+    if (platform === 'whatsapp') tokenCost = 3;
+    else if (platform === 'instagram' || platform === 'facebook') tokenCost = 2; // Approximations for Meta
+    else if (platform === 'widget') tokenCost = 2;
+    // We run this fire-and-forget so it doesn't slow down the response
+    supabase.rpc('deduct_message_token', { 
+      p_user_id: userId, 
+      p_platform: platform, 
+      p_cost: tokenCost 
+    }).then(({ error }) => {
+      if (error) console.error('[BILLING ERROR] Could not deduct tokens:', error.message);
+      else console.log(`[BILLING] Deducted ${tokenCost} tokens for ${platform} message.`);
     })
 
     return new Response(JSON.stringify({ response: aiResponse }), {

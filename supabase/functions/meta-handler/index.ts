@@ -55,6 +55,18 @@ serve(async (req) => {
       const platform = payload.object === "page" ? "facebook" : "instagram";
       
       for (const entry of payload.entry || []) {
+        const receiverId = entry.id;
+        let integrationData = null;
+        if (receiverId) {
+          const { data } = await supabase
+            .from('integrations')
+            .select('*')
+            .eq('provider', 'meta_social')
+            .eq('config->>page_id', receiverId)
+            .single();
+          integrationData = data;
+        }
+
         for (const messaging of entry.messaging || []) {
           const externalId = messaging.sender?.id
           let messageText = ""
@@ -68,13 +80,17 @@ serve(async (req) => {
           }
 
           if (externalId && messageText) {
-            await routeToBrainAndRespond(platform, externalId, messageText)
+            if (!integrationData) {
+              console.log(`[META] Missing integration for receiver ${receiverId}. Dropping message.`);
+              continue;
+            }
+            await routeToBrainAndRespond(platform, externalId, messageText, "", integrationData)
           } else {
             console.log(`[META] Skipping ${platform.toUpperCase()} payload (missing sender.id or text). Full object:`, JSON.stringify(messaging))
           }
         }
       }
-    } 
+    }
     // DASHBOARD TEST HANDLER (Simplified format)
     else if (payload.field === "messages" && payload.value) {
       console.log("[META] Received simplified Test Payload from Dashboard.")
@@ -95,14 +111,31 @@ serve(async (req) => {
       for (const entry of payload.entry || []) {
         for (const change of entry.changes || []) {
           const value = change.value
+          const phoneId = value?.metadata?.phone_number_id;
+          let integrationData = null;
+          
+          if (phoneId) {
+            const { data } = await supabase
+              .from('integrations')
+              .select('*')
+              .eq('provider', 'meta_whatsapp')
+              .eq('config->>phone_id', phoneId)
+              .single();
+            integrationData = data;
+          }
+
           for (const message of value?.messages || []) {
             const externalId = message.from
             const customerName = value.contacts?.[0]?.profile?.name || ""
             const messageText = message.text?.body
 
             if (externalId && messageText) {
+              if (!integrationData) {
+                console.log(`[META] Missing WhatsApp integration for phone_id ${phoneId}. Dropping message.`);
+                continue;
+              }
               console.log(`[META] WhatsApp Message from ${externalId} (${customerName}): ${messageText}`)
-              await routeToBrainAndRespond("whatsapp", externalId, messageText, customerName)
+              await routeToBrainAndRespond("whatsapp", externalId, messageText, customerName, integrationData)
             } else {
               console.log(`[META] Skipping WhatsApp non-text/empty event from ${externalId}`)
             }
@@ -118,8 +151,17 @@ serve(async (req) => {
   }
 })
 
-async function routeToBrainAndRespond(platform: string, externalId: string, messageText: string, customerName = "") {
-  console.log(`[META] Routing to Brain: ${platform} | ID: ${externalId} | Msg: ${messageText}`)
+async function routeToBrainAndRespond(platform: string, externalId: string, messageText: string, customerName = "", integrationData: any) {
+  const userId = integrationData?.user_id;
+  const token = integrationData?.config?.token;
+  const waPhoneId = integrationData?.config?.phone_id;
+
+  if (!userId || !token) {
+    console.error(`[META] Integration Data Error for ${platform}. User ID or Token is missing.`, integrationData);
+    return;
+  }
+
+  console.log(`[META] Routing to Brain [User:${userId}]: ${platform} | ID: ${externalId} | Msg: ${messageText}`)
   
   try {
     const brainResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/messenger`, {
@@ -132,7 +174,7 @@ async function routeToBrainAndRespond(platform: string, externalId: string, mess
         platform,
         external_id: externalId,
         message: messageText,
-        userId: Deno.env.get('ADMIN_USER_ID'),
+        userId: userId, // DYNAMIC TENANT ID
         name: customerName
       })
     })
@@ -147,9 +189,9 @@ async function routeToBrainAndRespond(platform: string, externalId: string, mess
     if (aiText) {
       console.log(`[META] AI Response obtained: "${aiText}". Sending back to ${platform}...`)
       if (platform === "instagram" || platform === "facebook") {
-        await sendMessengerMessage(externalId, aiText, platform)
+        await sendMessengerMessage(externalId, aiText, platform, token)
       } else if (platform === "whatsapp") {
-        await sendWhatsAppMessage(externalId, aiText)
+        await sendWhatsAppMessage(externalId, aiText, token, waPhoneId)
       }
     } else {
       console.log(`[META] Brain returned no response text.`)
@@ -159,13 +201,8 @@ async function routeToBrainAndRespond(platform: string, externalId: string, mess
   }
 }
 
-async function sendMessengerMessage(recipientId: string, text: string, platform: string) {
-  // Use specific INSTAGRAM_PAGE_TOKEN if it's IG, otherwise fallback correctly to standard PAGE_ACCESS_TOKEN
-  const TOKEN = platform === "instagram" 
-    ? (Deno.env.get("INSTAGRAM_PAGE_TOKEN") || PAGE_ACCESS_TOKEN) 
-    : PAGE_ACCESS_TOKEN;
-    
-  const url = `https://graph.facebook.com/v21.0/me/messages?access_token=${TOKEN}`
+async function sendMessengerMessage(recipientId: string, text: string, platform: string, token: string) {
+  const url = `https://graph.facebook.com/v21.0/me/messages?access_token=${token}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -178,10 +215,12 @@ async function sendMessengerMessage(recipientId: string, text: string, platform:
   console.log(`[${platform.toUpperCase()} SEND RESULT]`, JSON.stringify(data))
 }
 
-async function sendWhatsAppMessage(recipientId: string, text: string) {
-  // Simple text back via WhatsApp Business Cloud API
-  const WA_TOKEN = Deno.env.get("WHATSAPP_TOKEN") || PAGE_ACCESS_TOKEN;
-  const url = `https://graph.facebook.com/v21.0/${Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")}/messages?access_token=${WA_TOKEN}`
+async function sendWhatsAppMessage(recipientId: string, text: string, token: string, waPhoneId: string) {
+  if (!waPhoneId) {
+     console.error("[WA ERROR] Missing waPhoneId mapping in integration table!");
+     return;
+  }
+  const url = `https://graph.facebook.com/v21.0/${waPhoneId}/messages?access_token=${token}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
