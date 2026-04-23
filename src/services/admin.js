@@ -24,3 +24,42 @@ export const adminToggleClient = async (userId, isActive) => {
   if (error) throw error;
   return data;
 };
+
+// ─── Integration Management (Admin impersonation) ───
+
+export const adminGetClientIntegrations = async (userId) => {
+  const { data, error } = await supabase
+    .from('integrations')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return data || [];
+};
+
+export const adminUpsertIntegration = async (userId, provider, config) => {
+  const { data, error } = await supabase
+    .from('integrations')
+    .upsert({
+      user_id: userId,
+      provider,
+      config,
+      is_active: true,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id,provider' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+// ─── Agent/Salon Profile Management ───
+
+export const adminGetClientAgent = async (userId) => {
+  const { data, error } = await supabase
+    .from('agents')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+};

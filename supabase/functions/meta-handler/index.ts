@@ -58,12 +58,22 @@ serve(async (req) => {
         const receiverId = entry.id;
         let integrationData = null;
         if (receiverId) {
-          const { data } = await supabase
+          let { data } = await supabase
             .from('integrations')
             .select('*')
             .eq('provider', 'meta_social')
             .eq('config->>page_id', receiverId)
-            .single();
+            .maybeSingle();
+            
+          if (!data) {
+            const res = await supabase
+              .from('integrations')
+              .select('*')
+              .eq('provider', 'meta_social')
+              .eq('config->>ig_id', receiverId)
+              .maybeSingle();
+            data = res.data;
+          }
           integrationData = data;
         }
 
@@ -154,6 +164,7 @@ serve(async (req) => {
 async function routeToBrainAndRespond(platform: string, externalId: string, messageText: string, customerName = "", integrationData: any) {
   const userId = integrationData?.user_id;
   const token = integrationData?.config?.token;
+  const pageToken = integrationData?.config?.page_token || token; // Page Access Token for sending
   const waPhoneId = integrationData?.config?.phone_id;
 
   if (!userId || !token) {
@@ -189,7 +200,9 @@ async function routeToBrainAndRespond(platform: string, externalId: string, mess
     if (aiText) {
       console.log(`[META] AI Response obtained: "${aiText}". Sending back to ${platform}...`)
       if (platform === "instagram" || platform === "facebook") {
-        await sendMessengerMessage(externalId, aiText, platform, token)
+        const pageId = integrationData?.config?.page_id;
+        console.log(`[META] Sending via ${pageToken === token ? 'System Token' : 'Page Token'} for page ${pageId}`)
+        await sendMessengerMessage(externalId, aiText, platform, pageToken, pageId)
       } else if (platform === "whatsapp") {
         await sendWhatsAppMessage(externalId, aiText, token, waPhoneId)
       }
@@ -201,8 +214,12 @@ async function routeToBrainAndRespond(platform: string, externalId: string, mess
   }
 }
 
-async function sendMessengerMessage(recipientId: string, text: string, platform: string, token: string) {
-  const url = `https://graph.facebook.com/v21.0/me/messages?access_token=${token}`
+async function sendMessengerMessage(recipientId: string, text: string, platform: string, token: string, pageId: string) {
+  if (!pageId) {
+     console.error("[FB/IG ERROR] Missing page_id mapping in integration table!");
+     return;
+  }
+  const url = `https://graph.facebook.com/v21.0/${pageId}/messages?access_token=${token}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

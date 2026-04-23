@@ -94,10 +94,10 @@ export default function Sidebar({ profile, isAdmin }) {
         {/* Settings Toggles */}
         <div className="divider" style={{ margin: '16px 0' }} />
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, padding: '0 8px' }}>
-          <button className="nav-item" onClick={toggleTheme} style={{ flex: 1, justifyContent: 'center', marginBottom: 0 }}>
+          <button className="nav-item" onClick={toggleTheme} style={{ flex: 1, justifyContent: 'center', marginBottom: 0, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="nav-item" onClick={toggleLanguage} style={{ flex: 1, justifyContent: 'center', marginBottom: 0 }}>
+          <button className="nav-item" onClick={toggleLanguage} style={{ flex: 1, justifyContent: 'center', marginBottom: 0, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
             <Languages size={18} />
             <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>{i18n.language}</span>
           </button>

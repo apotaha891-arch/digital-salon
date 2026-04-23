@@ -145,14 +145,34 @@ serve(async (req: Request) => {
       role: 'user', 
       content: message 
     })
+
+    // 3b. MEMORY: Detect returning customer by external_id
+    let returningCustomerContext = '';
+    const { data: existingBookings } = await supabase
+      .from('bookings')
+      .select('client_name, service_name, date, time, status')
+      .eq('user_id', userId)
+      .eq('external_id', external_id)
+      .order('created_at', { ascending: false })
+      .limit(5);
     
-    // 4. Define AI Tools (Simplified for direct flow)
+    if (existingBookings && existingBookings.length > 0) {
+      const customerName = existingBookings[0].client_name;
+      const bookingsSummary = existingBookings.map(b => 
+        `- ${b.service_name} في ${b.date} الساعة ${b.time} (${b.status})`
+      ).join('\n');
+      returningCustomerContext = `\n\n🔁 هذه عميلة سابقة! اسمها "${customerName}". رحبي بها بالاسم.
+حجوزاتها السابقة:\n${bookingsSummary}\nلا تطلبي اسمها مرة أخرى، استخدمي اسمها المسجل مباشرة.`;
+      console.log(`[BRAIN] Returning customer detected: ${customerName} (${existingBookings.length} bookings)`);
+    }
+    
+    // 4. Define AI Tools
     const tools = [
       {
         function_declarations: [
           {
             name: "get_day_bookings",
-            description: "تحقق من جميع الحجوزات الموجودة في يوم معين لمعرفة الأوقات المزدحمة.",
+            description: "تحقق من الأوقات المحجوزة في يوم معين لتحديد الأوقات المتاحة (ترجع أوقات فقط بدون أسماء عملاء).",
             parameters: {
               type: "object",
               properties: {
@@ -171,6 +191,17 @@ serve(async (req: Request) => {
                 time: { type: "string", description: "الوقت (HH:MM)" }
               },
               required: ["date", "time"]
+            }
+          },
+          {
+            name: "lookup_my_booking",
+            description: "البحث عن حجوزات عميلة معينة بالاسم أو رقم الهاتف. استخدمي هذه الأداة عندما تسأل العميلة عن حجزها.",
+            parameters: {
+              type: "object",
+              properties: {
+                search: { type: "string", description: "اسم العميلة أو رقم هاتفها" }
+              },
+              required: ["search"]
             }
           },
           {
@@ -211,7 +242,7 @@ serve(async (req: Request) => {
 ${servicesContext}
 
 تعليمات إضافية خاصة بشخصيتك:
-${agent.instructions || 'لا توجد تعليمات إضافية.'}`
+${agent.instructions || 'لا توجد تعليمات إضافية.'}${returningCustomerContext}`
 
     // 6. Call AI
     const aiResponse = await callGeminiDynamic(systemPrompt, history || [], message, tools, userId, supabase, platform, external_id)
@@ -368,13 +399,30 @@ async function callGeminiDynamic(
         let result = null
         try {
           if (fn.name === 'get_day_bookings') {
-            const { data, error } = await supabase.rpc('get_day_bookings', { p_salon_id: userId, p_date: fn.args.date })
+            // PRIVACY: Return only time slots and service names, never customer names/phones
+            const { data, error } = await supabase
+              .from('bookings')
+              .select('time, service_name, status')
+              .eq('user_id', userId)
+              .eq('date', fn.args.date);
             if (error) throw error
-            result = data
+            result = (data || []).map(b => ({ time: b.time, service: b.service_name, status: b.status }))
           } else if (fn.name === 'check_availability') {
             const { data, error } = await supabase.rpc('check_availability', { p_salon_id: userId, p_date: fn.args.date, p_time: fn.args.time })
             if (error) throw error
             result = { available: data }
+          } else if (fn.name === 'lookup_my_booking') {
+            // PRIVACY: Search only by name or phone for this specific customer
+            const search = String(fn.args.search).trim();
+            const { data, error } = await supabase
+              .from('bookings')
+              .select('client_name, service_name, date, time, status, client_phone')
+              .eq('user_id', userId)
+              .or(`client_name.ilike.%${search}%,client_phone.ilike.%${search}%`)
+              .order('date', { ascending: false })
+              .limit(5);
+            if (error) throw error
+            result = data || []
           } else if (fn.name === 'create_booking') {
             console.log(`[BOOKING] Attempting creation for user ${userId} via ${platform}`)
             const { data, error } = await supabase.rpc('create_booking', {
