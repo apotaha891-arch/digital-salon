@@ -1,12 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../hooks/useWallet';
-import { CreditCard, TrendingUp, TrendingDown, Clock, Zap, ChevronLeft, ChevronRight, MessageCircle, Send, Globe, Filter } from 'lucide-react';
-import StatCard from '../components/ui/StatCard';
+import { 
+  CreditCard, TrendingUp, TrendingDown, Clock, Zap, ChevronLeft, ChevronRight, 
+  MessageCircle, Send, Globe, Filter, Crown, Star, Shield, ArrowRight,
+  Calendar, Package, AlertTriangle, CheckCircle
+} from 'lucide-react';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
+import PricingCard from '../components/billing/PricingCard';
+import { supabase } from '../services/supabase';
 
+// ─── Constants ───
 const PLATFORM_ICONS = {
   whatsapp: { icon: MessageCircle, color: '#25D366', label: 'WhatsApp' },
   instagram: { icon: Send, color: '#E1306C', label: 'Instagram' },
@@ -15,7 +21,7 @@ const PLATFORM_ICONS = {
   widget: { icon: Globe, color: '#D946EF', label: 'Widget' },
 };
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 12;
 
 function getPlatformFromReason(reason) {
   if (!reason) return null;
@@ -28,142 +34,414 @@ function getPlatformFromReason(reason) {
   return null;
 }
 
+// ─── Tabs ───
+const TABS = {
+  plans: { icon: Crown, label_en: 'Plans', label_ar: 'الباقات' },
+  topup: { icon: Package, label_en: 'Top-up', label_ar: 'شحن رصيد' },
+  history: { icon: Clock, label_en: 'History', label_ar: 'السجل' },
+};
+
 export default function Billing() {
   const { t, i18n } = useTranslation();
+  const isAr = i18n.language === 'ar';
   const { user } = useAuth();
   const { wallet, ledger, loading } = useWallet(user?.id);
+  
+  const [activeTab, setActiveTab] = useState('plans');
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(0);
+  const [plans, setPlans] = useState([]);
+  const [subscription, setSubscription] = useState(null);
+  const [topups, setTopups] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(true);
 
-  const totalUsage = useMemo(() => {
-    return ledger.reduce((sum, item) => item.amount < 0 ? sum + Math.abs(item.amount) : sum, 0);
-  }, [ledger]);
+  // Load plans and subscription from DB
+  useEffect(() => {
+    async function loadData() {
+      setPlansLoading(true);
+      try {
+        const [plansRes, subRes, topRes] = await Promise.all([
+          supabase.from('subscription_plans').select('*').eq('is_active', true).order('sort_order'),
+          supabase.from('subscriptions').select('*').eq('user_id', user?.id).maybeSingle(),
+          supabase.from('topup_packages').select('*').eq('is_active', true).order('sort_order'),
+        ]);
+        setPlans(plansRes.data || []);
+        setSubscription(subRes.data);
+        setTopups(topRes.data || []);
+      } catch (e) {
+        console.error('Failed to load plans:', e);
+      } finally {
+        setPlansLoading(false);
+      }
+    }
+    if (user?.id) loadData();
+  }, [user?.id]);
 
+  const displayPlans = plans.length > 0 ? plans : [
+    { id: 'starter', name: 'Starter', name_ar: 'المبتدئ', price_usd: 29, monthly_tokens: 200, trial_days: 14, topup_price_per_token: 0.20, booking_payment_enabled: false, booking_fee_usd: 0, features: '["14-day free trial","200 AI tokens/mo","Rollover tokens","All channels","Bookings","CRM","Email support"]', features_ar: '["تجربة مجانية 14 يوم","200 رسالة/شهر","ترحيل الرسائل","جميع القنوات","حجوزات","إدارة عملاء","دعم بالإيميل"]' },
+    { id: 'pro', name: 'Pro', name_ar: 'الاحترافي', price_usd: 49, monthly_tokens: 400, trial_days: 14, topup_price_per_token: 0.15, booking_payment_enabled: false, booking_fee_usd: 0, features: '["14-day free trial","400 AI tokens/mo","Rollover tokens","All channels","Advanced bookings","CRM","Priority support","Analytics"]', features_ar: '["تجربة مجانية 14 يوم","400 رسالة/شهر","ترحيل الرسائل","جميع القنوات","حجوزات متقدمة","إدارة عملاء","دعم أولوية","تحليلات"]' },
+    { id: 'business', name: 'Business', name_ar: 'الأعمال', price_usd: 100, monthly_tokens: 400, trial_days: 14, topup_price_per_token: 0.10, booking_payment_enabled: true, booking_fee_usd: 3, features: '["14-day free trial","400 AI tokens/mo","Rollover tokens","All channels","Online payments","$3/booking fee","Stripe payouts","Priority support","Analytics","Custom AI"]', features_ar: '["تجربة مجانية 14 يوم","400 رسالة/شهر","ترحيل الرسائل","جميع القنوات","دفع إلكتروني","3$ لكل حجز","تحويلات Stripe","دعم أولوية","تحليلات","AI مخصص"]' },
+  ];
+
+  const currentPlanId = subscription?.plan_id || null;
+  const currentPlan = displayPlans.find(p => p.id === currentPlanId);
+
+  // Ledger calculations
+  const totalUsage = useMemo(() => ledger.reduce((sum, item) => item.amount < 0 ? sum + Math.abs(item.amount) : sum, 0), [ledger]);
   const filtered = useMemo(() => {
     if (filter === 'all') return ledger;
     return ledger.filter(item => getPlatformFromReason(item.reason) === filter);
   }, [ledger, filter]);
-
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const pageItems = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Group by date for subtle separators  
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric' });
-  };
-  const formatTime = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatDate = (d) => new Date(d).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { month: 'short', day: 'numeric' });
+  const formatTime = (d) => new Date(d).toLocaleTimeString(isAr ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 
-  // Platform filter counts
   const platformCounts = useMemo(() => {
-    const counts = { all: ledger.length };
-    ledger.forEach(item => {
-      const p = getPlatformFromReason(item.reason);
-      if (p) counts[p] = (counts[p] || 0) + 1;
-    });
-    return counts;
+    const c = { all: ledger.length };
+    ledger.forEach(item => { const p = getPlatformFromReason(item.reason); if (p) c[p] = (c[p] || 0) + 1; });
+    return c;
   }, [ledger]);
 
-  const filterTabs = [
-    { id: 'all', label: i18n.language === 'ar' ? 'الكل' : 'All', icon: Filter },
-    ...Object.entries(platformCounts)
-      .filter(([k]) => k !== 'all')
-      .map(([k, count]) => ({
-        id: k,
-        label: `${PLATFORM_ICONS[k]?.label || k}`,
-        icon: PLATFORM_ICONS[k]?.icon || Filter,
-        color: PLATFORM_ICONS[k]?.color,
-        count,
-      })),
-  ];
+  // Current plan top-ups
+  const currentTopups = topups.filter(tp => tp.plan_id === currentPlanId);
+
+  const handleSelectPlan = (plan) => {
+    // TODO: Integrate with Stripe Checkout
+    alert(`🚀 ${isAr ? 'سيتم توجيهك إلى Stripe للاشتراك في' : 'Redirecting to Stripe for'} ${plan.name}`);
+  };
+
+  const handleTopUp = (pkg) => {
+    // TODO: Integrate with Stripe Checkout for one-time payment
+    alert(`💳 ${isAr ? 'شحن' : 'Top-up'} ${pkg.tokens} ${isAr ? 'رسالة بـ' : 'tokens for'} $${pkg.price_usd}`);
+  };
 
   if (loading) return <Spinner centered />;
 
   return (
     <div className="fade-in">
-      <div className="page-header">
-        <h1 className="page-title">{t('billing.title')}</h1>
-        <p className="page-subtitle">{t('billing.subtitle')}</p>
+      {/* ═══ HEADER + CURRENT PLAN OVERVIEW ═══ */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <CreditCard size={26} style={{ color: 'var(--primary)' }} />
+          {isAr ? 'الباقات والفواتير' : 'Plans & Billing'}
+        </h1>
+        <p className="page-subtitle">{isAr ? 'إدارة اشتراكك ورصيدك' : 'Manage your subscription and balance'}</p>
       </div>
 
-      <div className="stats-grid" style={{ marginBottom: 32 }}>
-        <StatCard 
-          label={t('billing.balance_label')} 
-          value={wallet?.balance ?? 0} 
-          icon={Zap} 
-          color="var(--success)" 
-        />
-        <StatCard 
-          label={t('billing.total_usage')} 
-          value={totalUsage} 
-          icon={TrendingDown} 
-          color="var(--error)" 
-        />
-        <StatCard 
-          label={t('billing.last_recharge')} 
-          value={ledger.find(l => l.amount > 0)?.amount ? `+${ledger.find(l => l.amount > 0).amount}` : 0} 
-          icon={TrendingUp} 
-        />
-      </div>
-
-      <div className="grid-2" style={{ gap: 28 }}>
-        {/* Recharge Card */}
-        <div className="card" style={{ borderTop: '4px solid var(--primary)' }}>
-          <h3 style={{ marginBottom: 16, fontWeight: 700 }}>{t('billing.recharge_title')}</h3>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>
-            {t('billing.recharge_sub')}
-          </p>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { amount: 500, price: 50, popular: false },
-              { amount: 1500, price: 120, popular: true },
-              { amount: 5000, price: 350, popular: false },
-            ].map(plan => (
-              <div key={plan.amount} className="glass-card" style={{ 
-                padding: 16, border: plan.popular ? '2px solid var(--primary)' : '1px solid var(--border)',
-                position: 'relative'
-              }}>
-                {plan.popular && (
-                  <div style={{ 
-                    position: 'absolute', left: 16, top: -10, background: 'var(--primary)', 
-                    color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 4, fontWeight: 900 
-                  }}>{t('billing.plans.popular')}</div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }}>{plan.amount} {t('billing.plans.tokens')}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('billing.plans.unlimited')}</div>
-                  </div>
-                  <div style={{ textAlign: i18n.dir() === 'rtl' ? 'left' : 'right' }}>
-                    <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--primary)' }}>{plan.price} {t('common.sar_short') || 'SAR'}</div>
-                    <button className="btn btn-primary btn-sm" style={{ marginTop: 8 }}>{t('billing.plans.buy_now')}</button>
-                  </div>
-                </div>
-              </div>
-            ))}
+      {/* Current Plan Summary Bar */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16,
+        marginBottom: 28
+      }}>
+        {/* Balance */}
+        <div style={{
+          padding: '20px 24px', borderRadius: 16,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 14
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'rgba(16,185,129,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#10B981'
+          }}>
+            <Zap size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+              {isAr ? 'الرصيد' : 'Balance'}
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#10B981' }}>
+              {wallet?.balance ?? 0}
+            </div>
           </div>
         </div>
 
-        {/* Ledger Card — Compact & Paginated */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontWeight: 700, margin: 0 }}>{t('billing.ledger_title')}</h3>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {filtered.length} {i18n.language === 'ar' ? 'عملية' : 'entries'}
-            </span>
-          </div>
-
-          {/* Platform Filter Tabs */}
-          <div style={{ 
-            display: 'flex', gap: 6, marginBottom: 16, overflowX: 'auto', 
-            paddingBottom: 4, flexWrap: 'nowrap' 
+        {/* Current Plan */}
+        <div style={{
+          padding: '20px 24px', borderRadius: 16,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 14
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'rgba(217,70,239,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--primary)'
           }}>
-            {filterTabs.map(tab => {
-              const Icon = tab.icon;
+            <Crown size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+              {isAr ? 'الخطة' : 'Plan'}
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 900 }}>
+              {currentPlan ? (isAr ? currentPlan.name_ar : currentPlan.name) : (isAr ? 'لا يوجد' : 'None')}
+            </div>
+          </div>
+        </div>
+
+        {/* Usage */}
+        <div style={{
+          padding: '20px 24px', borderRadius: 16,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 14
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: 'rgba(239,68,68,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#EF4444'
+          }}>
+            <TrendingDown size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+              {isAr ? 'الاستخدام' : 'Usage'}
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: '#EF4444' }}>
+              {totalUsage}
+            </div>
+          </div>
+        </div>
+
+        {/* Frozen (if any) */}
+        <div style={{
+          padding: '20px 24px', borderRadius: 16,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', gap: 14
+        }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 12,
+            background: wallet?.frozen_balance > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(139,92,246,0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: wallet?.frozen_balance > 0 ? '#F59E0B' : '#8B5CF6'
+          }}>
+            {wallet?.frozen_balance > 0 ? <AlertTriangle size={22} /> : <Shield size={22} />}
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+              {wallet?.frozen_balance > 0 
+                ? (isAr ? 'مجمّدة' : 'Frozen') 
+                : (isAr ? 'آخر شحن' : 'Last Recharge')}
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: wallet?.frozen_balance > 0 ? '#F59E0B' : '#8B5CF6' }}>
+              {wallet?.frozen_balance > 0 
+                ? wallet.frozen_balance 
+                : (ledger.find(l => l.amount > 0)?.amount ? `+${ledger.find(l => l.amount > 0).amount}` : '0')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ TAB NAVIGATION ═══ */}
+      <div style={{ 
+        display: 'flex', gap: 4, marginBottom: 28,
+        background: 'var(--surface)', borderRadius: 14, padding: 4,
+        border: '1px solid var(--border)', width: 'fit-content'
+      }}>
+        {Object.entries(TABS).map(([key, tab]) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 20px', borderRadius: 10, border: 'none',
+                background: isActive ? 'var(--primary)' : 'transparent',
+                color: isActive ? 'white' : 'var(--text-muted)',
+                fontSize: 13, fontWeight: isActive ? 800 : 500,
+                cursor: 'pointer', transition: 'all 0.2s',
+                fontFamily: 'inherit'
+              }}
+            >
+              <Icon size={16} />
+              {isAr ? tab.label_ar : tab.label_en}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ═══ TAB: PLANS ═══ */}
+      {activeTab === 'plans' && (
+        <div>
+          {plansLoading ? <Spinner centered /> : (
+            <div style={{ 
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20,
+              alignItems: 'stretch'
+            }}>
+              {displayPlans.map(plan => (
+                <PricingCard
+                  key={plan.id}
+                  plan={plan}
+                  isAr={isAr}
+                  isCurrentPlan={currentPlanId === plan.id}
+                  isPopular={plan.id === 'pro'}
+                  comingSoon={plan.id === 'business'}
+                  onSelect={handleSelectPlan}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Token Rollover Info */}
+          <div style={{
+            marginTop: 24, padding: '16px 24px', borderRadius: 16,
+            background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)',
+            display: 'flex', gap: 12, alignItems: 'center'
+          }}>
+            <CheckCircle size={20} style={{ color: '#10B981', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#10B981' }}>
+                {isAr ? 'ترحيل الرسائل' : 'Token Rollover'}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                {isAr 
+                  ? 'الرسائل غير المستخدمة تُرحّل للشهر التالي ولا تنتهي. إذا ألغيت الاشتراك، يتم تجميد رصيدك (لا يُحذف) ويعود عند إعادة التفعيل.'
+                  : 'Unused tokens roll over to the next month — they never expire. If you cancel, your balance is frozen (not deleted) and restored when you resubscribe.'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ TAB: TOP-UP ═══ */}
+      {activeTab === 'topup' && (
+        <div>
+          {!currentPlanId ? (
+            <div style={{ 
+              padding: 60, textAlign: 'center', 
+              background: 'var(--surface)', borderRadius: 20,
+              border: '1px solid var(--border)'
+            }}>
+              <Package size={48} style={{ color: 'var(--text-muted)', marginBottom: 16 }} />
+              <h3 style={{ fontWeight: 900, marginBottom: 8 }}>
+                {isAr ? 'اشترك أولاً' : 'Subscribe First'}
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
+                {isAr ? 'تحتاج اشتراك نشط لشراء رسائل إضافية' : 'You need an active subscription to purchase top-ups'}
+              </p>
+              <button 
+                onClick={() => setActiveTab('plans')}
+                className="btn btn-primary"
+                style={{ marginTop: 16 }}
+              >
+                {isAr ? 'عرض الباقات' : 'View Plans'}
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Rate Info */}
+              <div style={{
+                marginBottom: 24, padding: '14px 20px', borderRadius: 14,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <div>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>
+                    {isAr ? `خطتك: ${currentPlan?.name_ar}` : `Your plan: ${currentPlan?.name}`}
+                  </span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginInlineStart: 8 }}>
+                    — {isAr ? 'سعر الرسالة الإضافية:' : 'Top-up rate:'}{' '}
+                    <strong style={{ color: 'var(--primary)' }}>${currentPlan?.topup_price_per_token}</strong>/{isAr ? 'رسالة' : 'token'}
+                  </span>
+                </div>
+                {currentPlanId === 'starter' && (
+                  <button 
+                    onClick={() => setActiveTab('plans')}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 14px', borderRadius: 10, border: 'none',
+                      background: 'rgba(217,70,239,0.1)', color: 'var(--primary)',
+                      fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
+                    }}
+                  >
+                    {isAr ? 'ترقية للحصول على سعر أقل' : 'Upgrade for cheaper rate'}
+                    <ArrowRight size={12} />
+                  </button>
+                )}
+              </div>
+
+              {/* Top-up Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                {(currentTopups.length > 0 ? currentTopups : [
+                  { tokens: 50, price_usd: currentPlanId === 'pro' ? 7.50 : 10, is_popular: false },
+                  { tokens: 100, price_usd: currentPlanId === 'pro' ? 15 : 20, is_popular: true },
+                  { tokens: 200, price_usd: currentPlanId === 'pro' ? 30 : 40, is_popular: false },
+                ]).map((pkg, idx) => (
+                  <div key={idx} style={{
+                    padding: 24, borderRadius: 20,
+                    background: 'var(--surface)',
+                    border: pkg.is_popular ? '2px solid var(--primary)' : '1px solid var(--border)',
+                    textAlign: 'center', position: 'relative',
+                    transition: 'all 0.2s'
+                  }}>
+                    {pkg.is_popular && (
+                      <div style={{
+                        position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
+                        background: 'var(--primary)', color: 'white',
+                        padding: '2px 12px', borderRadius: 10,
+                        fontSize: 10, fontWeight: 900
+                      }}>
+                        {isAr ? 'الأفضل قيمة' : 'Best Value'}
+                      </div>
+                    )}
+                    <div style={{ 
+                      width: 56, height: 56, borderRadius: 16, margin: '0 auto 12px',
+                      background: 'rgba(217,70,239,0.08)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <Zap size={28} style={{ color: 'var(--primary)' }} />
+                    </div>
+                    <div style={{ fontWeight: 900, fontSize: 22 }}>{pkg.tokens}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+                      {isAr ? 'رسالة' : 'tokens'}
+                    </div>
+                    <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--primary)', marginBottom: 16 }}>
+                      ${pkg.price_usd}
+                    </div>
+                    <button
+                      onClick={() => handleTopUp(pkg)}
+                      className="btn btn-primary btn-sm btn-full"
+                      style={{ borderRadius: 12 }}
+                    >
+                      {isAr ? 'شراء' : 'Buy Now'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ═══ TAB: HISTORY ═══ */}
+      {activeTab === 'history' && (
+        <div style={{ 
+          background: 'var(--surface)', borderRadius: 20, 
+          border: '1px solid var(--border)', overflow: 'hidden' 
+        }}>
+          {/* Filter Tabs */}
+          <div style={{ 
+            display: 'flex', gap: 6, padding: '16px 20px', 
+            borderBottom: '1px solid var(--border)',
+            overflowX: 'auto' 
+          }}>
+            {[
+              { id: 'all', label: isAr ? 'الكل' : 'All', count: platformCounts.all },
+              ...Object.entries(platformCounts)
+                .filter(([k]) => k !== 'all')
+                .map(([k, count]) => ({
+                  id: k,
+                  label: PLATFORM_ICONS[k]?.label || k,
+                  color: PLATFORM_ICONS[k]?.color,
+                  count,
+                })),
+            ].map(tab => {
               const isActive = filter === tab.id;
               return (
                 <button
@@ -171,27 +449,21 @@ export default function Billing() {
                   onClick={() => { setFilter(tab.id); setPage(0); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '6px 12px', borderRadius: 20, border: 'none',
-                    background: isActive 
-                      ? (tab.color ? `${tab.color}20` : 'rgba(217,70,239,0.15)') 
-                      : 'var(--surface2)',
+                    padding: '5px 12px', borderRadius: 20, 
+                    border: `1px solid ${isActive ? (tab.color || 'var(--primary)') : 'var(--border)'}`,
+                    background: isActive ? `${tab.color || 'var(--primary)'}15` : 'transparent',
                     color: isActive ? (tab.color || 'var(--primary)') : 'var(--text-muted)',
-                    fontSize: 12, fontWeight: isActive ? 700 : 500,
-                    cursor: 'pointer', transition: 'all 0.2s',
-                    whiteSpace: 'nowrap', flexShrink: 0,
-                    borderWidth: 1, borderStyle: 'solid',
-                    borderColor: isActive ? (tab.color || 'var(--primary)') : 'var(--border)',
+                    fontSize: 11, fontWeight: isActive ? 700 : 500,
+                    cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                    fontFamily: 'inherit'
                   }}
                 >
-                  <Icon size={13} />
                   {tab.label}
-                  {tab.count != null && (
-                    <span style={{ 
-                      background: isActive ? (tab.color || 'var(--primary)') : 'var(--border)', 
-                      color: isActive ? 'white' : 'var(--text-muted)',
-                      padding: '1px 6px', borderRadius: 10, fontSize: 10, fontWeight: 900 
-                    }}>{tab.count}</span>
-                  )}
+                  <span style={{ 
+                    background: isActive ? (tab.color || 'var(--primary)') : 'var(--surface2)', 
+                    color: isActive ? 'white' : 'var(--text-muted)',
+                    padding: '1px 6px', borderRadius: 10, fontSize: 9, fontWeight: 900 
+                  }}>{tab.count}</span>
                 </button>
               );
             })}
@@ -199,11 +471,7 @@ export default function Billing() {
 
           {filtered.length > 0 ? (
             <>
-              {/* Compact Ledger Table */}
-              <div style={{ 
-                maxHeight: 420, overflowY: 'auto', 
-                borderRadius: 12, border: '1px solid var(--border)' 
-              }}>
+              <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 {pageItems.map((item, idx) => {
                   const platform = getPlatformFromReason(item.reason);
                   const PIcon = platform ? PLATFORM_ICONS[platform]?.icon : null;
@@ -216,7 +484,7 @@ export default function Billing() {
                     <React.Fragment key={item.id}>
                       {showDateHeader && (
                         <div style={{ 
-                          padding: '6px 16px', background: 'var(--surface2)', 
+                          padding: '6px 20px', background: 'var(--surface2)', 
                           fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
                           borderBottom: '1px solid var(--border)',
                           position: 'sticky', top: 0, zIndex: 1
@@ -225,7 +493,7 @@ export default function Billing() {
                         </div>
                       )}
                       <div style={{ 
-                        padding: '10px 16px', display: 'flex', 
+                        padding: '10px 20px', display: 'flex', 
                         justifyContent: 'space-between', alignItems: 'center',
                         borderBottom: '1px solid var(--border)',
                         transition: 'background 0.15s',
@@ -249,9 +517,7 @@ export default function Billing() {
                             <div style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {item.reason}
                             </div>
-                            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                              {formatTime(item.created_at)}
-                            </div>
+                            <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatTime(item.created_at)}</div>
                           </div>
                         </div>
                         <div style={{ 
@@ -265,44 +531,30 @@ export default function Billing() {
                   );
                 })}
               </div>
-
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div style={{ 
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                  marginTop: 12, padding: '8px 0' 
+                  padding: '10px 20px', borderTop: '1px solid var(--border)',
+                  background: 'var(--surface2)'
                 }}>
-                  <button 
-                    className="btn btn-secondary btn-sm" 
-                    disabled={page === 0}
-                    onClick={() => setPage(p => p - 1)}
-                    style={{ padding: '6px 12px' }}
-                  >
+                  <button className="btn btn-secondary btn-sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
                     <ChevronRight size={14} />
                   </button>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {page + 1} / {totalPages}
-                  </span>
-                  <button 
-                    className="btn btn-secondary btn-sm" 
-                    disabled={page >= totalPages - 1}
-                    onClick={() => setPage(p => p + 1)}
-                    style={{ padding: '6px 12px' }}
-                  >
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{page + 1} / {totalPages}</span>
+                  <button className="btn btn-secondary btn-sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
                     <ChevronLeft size={14} />
                   </button>
                 </div>
               )}
             </>
           ) : (
-            <EmptyState 
-              icon={CreditCard}
-              title={t('billing.ledger_empty_title')}
-              description={t('billing.ledger_empty_sub')}
-            />
+            <div style={{ padding: 60, textAlign: 'center' }}>
+              <Clock size={40} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
+              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{isAr ? 'لا توجد عمليات بعد' : 'No transactions yet'}</p>
+            </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

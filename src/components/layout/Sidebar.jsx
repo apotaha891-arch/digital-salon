@@ -1,42 +1,44 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  LayoutDashboard, 
-  CalendarCheck, 
-  MessageSquare, 
-  Settings, 
-  CreditCard, 
-  LogOut, 
-  ShieldCheck, 
+import {
+  LayoutDashboard,
+  CalendarCheck,
+  MessageSquare,
+  Settings,
+  CreditCard,
+  LogOut,
+  ShieldCheck,
   HelpCircle,
   Users,
   Sun,
   Moon,
-  Languages
+  Languages,
+  Plug,
+  Store
 } from 'lucide-react';
 import { signOut } from '../../services/supabase';
 import { SECTOR } from '../../config/sector';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function Sidebar({ profile, isAdmin }) {
+export default function Sidebar({ profile, isAdmin, businessName }) {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const clientNav = [
-    { to: '/dashboard', icon: LayoutDashboard, label: t('common.dashboard') },
-    { to: '/bookings', icon: CalendarCheck, label: t('common.bookings') },
-    { to: '/tickets', icon: MessageSquare, label: t('common.tickets') },
-    { to: '/setup', icon: Settings, label: t('common.setup') },
-    { to: '/customers', icon: Users, label: t('common.customers') },
-    { to: '/billing', icon: CreditCard, label: t('common.billing') },
+    { to: '/dashboard',    icon: LayoutDashboard, label: t('common.dashboard') },
+    { to: '/bookings',     icon: CalendarCheck,   label: t('common.bookings') },
+    { to: '/customers',    icon: Users,            label: t('common.customers') },
+    { to: '/setup',        icon: Settings,         label: t('common.setup') },
+    { to: '/integrations', icon: Plug,             label: t('sidebar.connect') },
+    { to: '/billing',      icon: CreditCard,       label: t('common.billing') },
   ];
 
   const adminNav = [
-    { to: '/admin', icon: LayoutDashboard, label: t('admin.dashboard.title') },
-    { to: '/admin/clients', icon: Users, label: t('admin.clients.title') },
-    { to: '/admin/settings', icon: Settings, label: t('common.setup') },
+    { to: '/admin',          icon: LayoutDashboard, label: t('admin.dashboard.title') },
+    { to: '/admin/clients',  icon: Users,            label: t('admin.clients.title') },
+    { to: '/admin/settings', icon: Settings,         label: t('common.setup') },
   ];
 
   const nav = isAdmin ? adminNav : clientNav;
@@ -54,7 +56,7 @@ export default function Sidebar({ profile, isAdmin }) {
   return (
     <aside className="sidebar">
       <div className="nav-logo">
-        {SECTOR.agent.avatar} {i18n.language === 'en' ? SECTOR.name : (i18n.language === 'ar' ? SECTOR.name_ar : SECTOR.name)}
+        {SECTOR.agent.avatar} {i18n.language === 'ar' ? SECTOR.name_ar : SECTOR.name}
       </div>
 
       {isAdmin && (
@@ -64,7 +66,10 @@ export default function Sidebar({ profile, isAdmin }) {
       )}
 
       <nav style={{ flex: 1 }}>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, padding: '0 16px' }}>{t('sidebar.main')}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, padding: '0 16px' }}>
+          {t('sidebar.main')}
+        </div>
+
         {nav.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -80,31 +85,39 @@ export default function Sidebar({ profile, isAdmin }) {
         {!isAdmin && (
           <>
             <div className="divider" style={{ margin: '16px 0' }} />
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, padding: '0 16px' }}>{t('sidebar.support')}</div>
-            <NavLink 
-              to="/help" 
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            >
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, padding: '0 16px' }}>
+              {t('sidebar.support')}
+            </div>
+            <NavLink to="/tickets" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <MessageSquare size={18} />
+              {t('common.tickets')}
+            </NavLink>
+            <NavLink to="/help" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <HelpCircle size={18} />
               {t('common.help')}
             </NavLink>
           </>
         )}
 
-        {/* Settings Toggles */}
         <div className="divider" style={{ margin: '16px 0' }} />
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, padding: '0 8px' }}>
-          <button className="nav-item" onClick={toggleTheme} style={{ flex: 1, justifyContent: 'center', marginBottom: 0, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+          <button
+            className="nav-item"
+            onClick={toggleTheme}
+            style={{ flex: 1, justifyContent: 'center', marginBottom: 0, background: 'var(--surface2)', border: '1px solid var(--border)' }}
+          >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button className="nav-item" onClick={toggleLanguage} style={{ flex: 1, justifyContent: 'center', marginBottom: 0, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
+          <button
+            className="nav-item"
+            onClick={toggleLanguage}
+            style={{ flex: 1, justifyContent: 'center', marginBottom: 0, background: 'var(--surface2)', border: '1px solid var(--border)' }}
+          >
             <Languages size={18} />
             <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>{i18n.language}</span>
           </button>
         </div>
       </nav>
-
-      {/* Navigation section ends here */}
 
       {profile?.role === 'admin' && (
         <button
@@ -120,8 +133,16 @@ export default function Sidebar({ profile, isAdmin }) {
       <div className="divider" />
 
       <div style={{ padding: '0 16px', marginBottom: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 700 }}>{profile?.full_name || t('common.user')}</div>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+        {businessName && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+            <Store size={12} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <div style={{ fontSize: 13, fontWeight: 800 }}>{businessName}</div>
+          </div>
+        )}
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          {profile?.full_name || t('common.user')}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {profile?.email}
         </div>
       </div>

@@ -16,6 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import AdminSettings from './pages/admin/AdminSettings';
 import Layout from './components/Layout';
+import Landing from './pages/Landing';
 import './index.css';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -56,7 +57,7 @@ const AppRoutes = () => {
       <Route path="/admin/clients" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminClients /></Layout></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminSettings /></Layout></ProtectedRoute>} />
 
-      <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} />} />
+      <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Landing />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

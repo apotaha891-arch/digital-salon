@@ -189,6 +189,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
       name: 'WhatsApp Cloud API',
       icon: MessageCircle,
       color: '#25D366',
+      comingSoon: true,
       fields: [
         { name: 'phone_id', label: 'WhatsApp Phone Number ID', placeholder: '1121987954327518...' },
         { name: 'token', label: 'Permanent Full Access Token', placeholder: 'EAASLM...' }
@@ -256,8 +257,11 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                 }}>
                   <tool.icon size={24} />
                 </div>
-                <div className={`badge ${isLinked ? 'badge-active' : 'badge-inactive'}`} style={{ fontSize: 10 }}>
-                  {isLinked ? t('integrations.status.linked') : t('integrations.status.not_linked')}
+                <div className={`badge ${tool.comingSoon ? '' : (isLinked ? 'badge-active' : 'badge-inactive')}`} style={{ 
+                  fontSize: 10,
+                  ...(tool.comingSoon ? { background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' } : {})
+                }}>
+                  {tool.comingSoon ? (isAr ? '🔜 قريباً' : '🔜 Coming Soon') : (isLinked ? t('integrations.status.linked') : t('integrations.status.not_linked'))}
                 </div>
               </div>
               <h4 style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>{tool.name}</h4>
@@ -270,7 +274,8 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                       className="form-input neon-input" 
                       value={config[field.name] || ''} 
                       placeholder={field.placeholder} 
-                      style={{ fontSize: 12, height: 40 }} 
+                      disabled={tool.comingSoon}
+                      style={{ fontSize: 12, height: 40, opacity: tool.comingSoon ? 0.4 : 1 }} 
                       onChange={(e) => {
                         const val = e.target.value.trim();
                         setLocalConfigs(prev => ({
@@ -283,6 +288,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                 ))}
               </div>
               <button 
+                disabled={tool.comingSoon}
                 onClick={async () => {
                   try {
                     await onToolSave(tool.id, config);
@@ -292,7 +298,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                   }
                 }} 
                 className="btn btn-primary btn-sm btn-full" 
-                style={{ fontSize: 11, marginBottom: 8 }}
+                style={{ fontSize: 11, marginBottom: 8, opacity: tool.comingSoon ? 0.4 : 1 }}
               >
                 <Check size={14} style={{ marginRight: 4 }} /> {t('integrations.save_settings')}
               </button>

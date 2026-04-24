@@ -59,7 +59,8 @@
     "main": "MAIN",
     "support": "HELP",
     "client_panel": "Client Panel",
-    "admin_panel": "Admin Panel"
+    "admin_panel": "Admin Panel",
+    "connect": "Connect Channel"
   },
   "settings": {
     "light_mode": "Light Mode",
@@ -302,6 +303,107 @@
         "confirm_btn": "Confirm Recharge",
         "ledger_reason": "Admin Recharge"
       }
+    }
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "demo": "Demo",
+      "faq": "FAQ",
+      "cta": "Get Started"
+    },
+    "hero": {
+      "title": "AI Receptionist for Your Salon — 24/7",
+      "subtitle": "Automate bookings and replies across Instagram, Messenger & Telegram — in Arabic and English. Let AI handle chats while you focus on your craft.",
+      "cta1": "Start Free Trial →",
+      "cta2": "Watch Demo",
+      "badge_booking": "Auto Booking",
+      "badge_instant": "Instant Reply",
+      "badge_247": "Available 24/7"
+    },
+    "proof": {
+      "text": "Integrated with"
+    },
+    "how": {
+      "title": "How It Works",
+      "step1_title": "Create Your Salon Profile",
+      "step1_desc": "Enter your salon details, services, and working hours in minutes.",
+      "step2_title": "Connect Your Channels",
+      "step2_desc": "Link your Instagram, Messenger, and Telegram accounts in one click.",
+      "step3_title": "AI Takes Over",
+      "step3_desc": "The assistant replies to clients, books appointments, and remembers every preference.",
+      "wa_soon": "WhatsApp Coming Soon 🔜"
+    },
+    "features": {
+      "title": "Everything You Need in One Place",
+      "ai_title": "AI-Powered Replies",
+      "ai_desc": "A smart assistant that understands Arabic and English and responds professionally to client questions.",
+      "booking_title": "Auto Booking",
+      "booking_desc": "Accepts and records appointments directly in your system without manual intervention.",
+      "multi_title": "Multi-Channel",
+      "multi_desc": "Instagram, Messenger, Telegram — all managed from one dashboard.",
+      "memory_title": "Client Memory",
+      "memory_desc": "The assistant remembers every client's preferences and past visit history.",
+      "reports_title": "Smart Reports",
+      "reports_desc": "Daily and weekly stats on conversations, bookings, and revenue.",
+      "tokens_title": "Token System",
+      "tokens_desc": "Pay only for what you use — unused tokens roll over to the next month."
+    },
+    "demo": {
+      "title": "See the AI in Action",
+      "subtitle": "A real conversation between a client and your salon AI assistant"
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "trial": "Try free for 14 days — no credit card required",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "save": "Save 20%",
+      "per_month": "/ mo",
+      "cta": "Get Started",
+      "note": "All plans include a 14-day free trial · Cancel anytime"
+    },
+    "testimonials": {
+      "title": "What Salon Owners Are Saying",
+      "t1_text": "I used to spend all my time answering messages. Now the AI handles it and I focus on my work.",
+      "t1_name": "Noura Al-Shammari",
+      "t1_salon": "Noura Salon — Riyadh",
+      "t2_text": "My clients love how fast the responses are. They say it feels like having a dedicated assistant 24/7!",
+      "t2_name": "Layla Al-Otaibi",
+      "t2_salon": "Leila Beauty — Jeddah",
+      "t3_text": "Bookings increased 40% in the first month because the AI responds even late at night.",
+      "t3_name": "Mona Al-Qahtani",
+      "t3_salon": "Mona Glam Studio — Dammam"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": "Do I need technical experience to use the platform?",
+      "a1": "Not at all. Setup takes less than 5 minutes with a simple, user-friendly interface.",
+      "q2": "Which channels are currently supported?",
+      "a2": "Instagram, Messenger (Facebook), and Telegram. WhatsApp is in development and coming soon.",
+      "q3": "What's the difference between Starter and Pro plans?",
+      "a3": "The main difference is monthly token count (200 vs 400) and priority support in the Pro plan.",
+      "q4": "Can I cancel my subscription anytime?",
+      "a4": "Yes. No binding contracts. Cancel anytime from your dashboard.",
+      "q5": "How does the token system work?",
+      "a5": "Each reply consumes one token. Unused tokens roll over to the next month and are never lost.",
+      "q6": "Can the assistant book appointments directly?",
+      "a6": "Yes. It can accept appointments and log them in the booking system automatically based on availability.",
+      "q7": "Is my data and client data secure?",
+      "a7": "Absolutely. We use Supabase with full encryption. Your data is yours and will never be shared.",
+      "q8": "Can I customize the assistant's responses?",
+      "a8": "Yes. From the setup page you can customize the assistant name, reply tone, available services, and working hours."
+    },
+    "final_cta": {
+      "title": "Ready to Get Started?",
+      "subtitle": "Join salon owners saving hours every week with Digital Salon",
+      "cta1": "Start Your Free Trial →",
+      "cta2": "Talk to Us"
+    },
+    "footer": {
+      "tagline": "AI-powered assistant for your salon — available 24/7",
+      "copyright": "© 2025 Digital Salon · All rights reserved"
     }
   }
 }

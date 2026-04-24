@@ -6,7 +6,7 @@ import { useAgent } from '../hooks/useAgent';
 import { useBusiness } from '../hooks/useBusiness';
 import { useWallet } from '../hooks/useWallet';
 import { useIntegrations } from '../hooks/useIntegrations';
-import { Plug, CreditCard, Settings, MessageSquare, Wifi, WifiOff } from 'lucide-react';
+import { Plug, CreditCard, Settings, MessageSquare, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 
 import StatCard from '../components/ui/StatCard';
 import Spinner from '../components/ui/Spinner';
@@ -14,13 +14,14 @@ import Badge from '../components/ui/Badge';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const isAr = i18n.language === 'ar';
 
   const { agent, loading: aLoading, toggleAgent, saving: tSaving } = useAgent(user?.id);
   const { business, loading: bLoading } = useBusiness(user?.id);
   const { wallet, loading: wLoading } = useWallet(user?.id);
-  const { integrations, loading: iLoading, activeToolsMap } = useIntegrations(user?.id);
+  const { integrations, loading: iLoading } = useIntegrations(user?.id);
 
   const loading = aLoading || bLoading || wLoading || iLoading;
 
@@ -37,16 +38,97 @@ export default function Dashboard() {
     return false;
   }).length;
 
+  const tokenBalance = wallet?.balance ?? 0;
+  const lowBalance = tokenBalance < 50;
+
+  // Setup progress
+  const setupSteps = [
+    { label: isAr ? 'بيانات الصالون' : 'Salon Info',   done: !!(business?.name && business?.phone) },
+    { label: isAr ? 'الخدمات'        : 'Services',      done: (business?.services?.length || 0) > 0 },
+    { label: isAr ? 'شخصية الموظفة'  : 'Agent',         done: !!agent?.name },
+    { label: isAr ? 'ربط قناة'        : 'Channel',       done: activeIntegrationsCount > 0 },
+    { label: isAr ? 'شحن الرصيد'     : 'Balance',       done: tokenBalance > 0 },
+  ];
+  const completedSteps = setupSteps.filter(s => s.done).length;
+  const progressPercent = Math.round((completedSteps / setupSteps.length) * 100);
+  const isFullySetup = completedSteps === setupSteps.length;
+
+  const ownerName = profile?.full_name || business?.name || (isAr ? 'عزيزتي' : 'there');
+
   return (
     <div>
+      {/* Welcome Header */}
       <div className="page-header">
-        <h1 className="page-title" style={{ fontSize: 26, fontWeight: 900 }}>
-          {business?.name || (i18n.language === 'ar' ? 'صالونك الرقمي' : 'Your Digital Salon')}
-        </h1>
-        <p className="page-subtitle" style={{ fontSize: 16 }}>{t('common.dashboard')}</p>
+        <div>
+          <h1 className="page-title" style={{ fontSize: 26, fontWeight: 900 }}>
+            {isAr ? `مرحباً، ${ownerName} 👋` : `Welcome back, ${ownerName} 👋`}
+          </h1>
+          <p className="page-subtitle" style={{ fontSize: 16 }}>
+            {business?.name || (isAr ? 'صالونك الرقمي' : 'Your Digital Salon')}
+          </p>
+        </div>
       </div>
 
-      {/* Agent Status Card */}
+      {/* ── Low Token Warning ── */}
+      {lowBalance && (
+        <div className="card" style={{
+          borderLeft: '4px solid var(--error)',
+          background: 'linear-gradient(to right, rgba(239,68,68,0.06), transparent)',
+          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16
+        }}>
+          <AlertTriangle size={20} style={{ color: 'var(--error)', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--error)' }}>
+              {isAr ? `رصيدك منخفض — ${tokenBalance} توكن فقط` : `Low balance — ${tokenBalance} tokens left`}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {isAr ? 'ستتوقف الموظفة عن الرد عند نفاد الرصيد' : 'Agent will stop responding when balance reaches zero'}
+            </div>
+          </div>
+          <button className="btn btn-secondary" style={{ fontSize: 13, flexShrink: 0 }} onClick={() => navigate('/billing')}>
+            {isAr ? 'شحن الآن' : 'Recharge'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Setup Progress Bar ── */}
+      {!isFullySetup && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>
+              {isAr
+                ? `أكملتِ ${completedSteps} من ${setupSteps.length} خطوات الإعداد`
+                : `${completedSteps} of ${setupSteps.length} setup steps complete`}
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>{progressPercent}%</span>
+          </div>
+          <div style={{ background: 'var(--surface2)', borderRadius: 8, height: 8, overflow: 'hidden', marginBottom: 10 }}>
+            <div style={{
+              height: '100%', borderRadius: 8,
+              width: `${progressPercent}%`,
+              background: 'linear-gradient(90deg, var(--primary), #e879f9)',
+              transition: 'width 0.4s ease'
+            }} />
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+            {setupSteps.map((step, i) => (
+              <span key={i} style={{
+                fontSize: 11, padding: '3px 8px', borderRadius: 20,
+                background: step.done ? 'rgba(34,197,94,0.1)' : 'var(--surface2)',
+                color: step.done ? 'var(--success)' : 'var(--text-muted)',
+                border: `1px solid ${step.done ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
+              }}>
+                {step.done ? '✓' : '○'} {step.label}
+              </span>
+            ))}
+          </div>
+          <button className="btn btn-secondary" style={{ fontSize: 13 }} onClick={() => navigate('/setup')}>
+            {isAr ? 'إكمال الإعداد ←' : 'Complete Setup →'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Agent Status Card ── */}
       <div className="agent-card glow" style={{ marginBottom: 28 }}>
         <div className="agent-avatar">{agent?.avatar || '💅'}</div>
         <div style={{ flex: 1 }}>
@@ -58,47 +140,66 @@ export default function Dashboard() {
         </div>
         <div style={{ textAlign: 'center' }}>
           <label className="toggle">
-            <input 
-              type="checkbox" 
-              checked={agent?.is_active || false} 
-              onChange={toggleAgent} 
-              disabled={tSaving} 
+            <input
+              type="checkbox"
+              checked={agent?.is_active || false}
+              onChange={toggleAgent}
+              disabled={tSaving}
             />
             <span className="toggle-slider" />
           </label>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-            {tSaving ? '...' : agent?.is_active ? t('common.off') : t('common.on')}
+          <div style={{ fontSize: 11, color: agent?.is_active ? 'var(--success)' : 'var(--text-muted)', marginTop: 6 }}>
+            {tSaving ? '...' : (agent?.is_active ? t('common.active') : t('common.inactive'))}
           </div>
         </div>
       </div>
 
-      {/* Quick Stats Grid */}
-      <div className="stats-grid" style={{ marginBottom: 28 }}>
+      {/* ── Stats Grid ── */}
+      <div className="stats-grid" style={{ marginBottom: activeIntegrationsCount === 0 ? 16 : 28 }}>
         <StatCard label={t('dashboard.stats.messages')} value={agent?.messages_today || 0} />
         <StatCard label={t('dashboard.stats.bookings')} value={agent?.bookings_today || 0} />
         <StatCard label={t('dashboard.stats.tools')} value={activeIntegrationsCount} />
-        <StatCard label={t('dashboard.stats.tokens')} value={wallet?.balance ?? 0} color="var(--success)" />
+        <StatCard label={t('dashboard.stats.tokens')} value={tokenBalance} color={lowBalance ? 'var(--error)' : 'var(--success)'} />
       </div>
 
-      {/* Quick Actions */}
+      {/* ── No Channels CTA ── */}
+      {activeIntegrationsCount === 0 && (
+        <div className="card" style={{
+          borderLeft: '4px solid var(--warning)',
+          background: 'linear-gradient(to right, rgba(245,158,11,0.05), transparent)',
+          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28
+        }}>
+          <Plug size={20} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>
+              {isAr ? 'لم تربطي أي قناة بعد' : 'No channels connected yet'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {isAr
+                ? 'اربطي واتساب أو تيليجرام لتبدأ الموظفة بالعمل'
+                : 'Connect WhatsApp or Telegram to activate your agent'}
+            </div>
+          </div>
+          <button className="btn btn-primary" style={{ fontSize: 13, flexShrink: 0 }} onClick={() => navigate('/integrations')}>
+            {isAr ? 'ربط الآن ←' : 'Connect Now →'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Quick Actions ── */}
       <div className="page-header">
         <h2 style={{ fontSize: 18, fontWeight: 700 }}>{t('dashboard.quick_actions.title')}</h2>
       </div>
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
-        gap: 16, 
-        marginBottom: 28 
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
         {[
-          { icon: Plug, label: t('dashboard.quick_actions.connect'), sub: t('dashboard.quick_actions.connect_sub'), to: '/integrations', color: 'var(--primary)' },
-          { icon: CreditCard, label: t('dashboard.quick_actions.recharge'), sub: t('dashboard.quick_actions.recharge_sub'), to: '/billing', color: 'var(--success)' },
-          { icon: Settings, label: t('dashboard.quick_actions.settings'), sub: t('dashboard.quick_actions.settings_sub'), to: '/setup', color: 'var(--warning)' },
+          { icon: Plug,        label: t('dashboard.quick_actions.connect'),  sub: t('dashboard.quick_actions.connect_sub'),  to: '/integrations', color: 'var(--primary)' },
+          { icon: CreditCard,  label: t('dashboard.quick_actions.recharge'), sub: t('dashboard.quick_actions.recharge_sub'), to: '/billing',      color: 'var(--success)' },
+          { icon: Settings,    label: t('dashboard.quick_actions.settings'), sub: t('dashboard.quick_actions.settings_sub'), to: '/setup',        color: 'var(--warning)' },
         ].map(({ icon: Icon, label, sub, to, color }) => (
-          <div 
-            key={to} 
-            className="card" 
-            style={{ cursor: 'pointer', transition: 'all 0.2s' }} 
+          <div
+            key={to}
+            className="card"
+            style={{ cursor: 'pointer', transition: 'all 0.2s' }}
             onClick={() => navigate(to)}
             onMouseEnter={e => e.currentTarget.style.borderColor = color}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
@@ -110,10 +211,10 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Support Section */}
-      <div className="card" style={{ 
-        borderLeft: '4px solid var(--primary)', 
-        background: 'linear-gradient(to right, rgba(217,70,239,0.05), transparent)' 
+      {/* ── Support ── */}
+      <div className="card" style={{
+        borderLeft: '4px solid var(--primary)',
+        background: 'linear-gradient(to right, rgba(217,70,239,0.05), transparent)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ background: 'var(--primary)', padding: 10, borderRadius: 12, color: 'white' }}>
@@ -123,9 +224,9 @@ export default function Dashboard() {
             <div style={{ fontWeight: 700 }}>{t('dashboard.support.title')}</div>
             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('dashboard.support.sub')}</div>
           </div>
-          <button 
-            className="btn btn-secondary" 
-            style={{ marginRight: 'auto' }} 
+          <button
+            className="btn btn-secondary"
+            style={{ marginRight: 'auto' }}
             onClick={() => window.open('https://wa.me/966XXXXXXXXX')}
           >
             {t('dashboard.support.btn')}
