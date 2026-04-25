@@ -4,24 +4,32 @@ import { useTranslation } from 'react-i18next';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const MESSAGES_AR = [
-  { from: 'user', text: 'مرحبا، هل عندكم موعد بكرة؟' },
-  { from: 'bot',  text: 'أهلاً! نعم لدينا مواعيد 😊\nأي خدمة تودين؟\n• قص شعر\n• صبغة\n• كيراتين' },
+  { from: 'user', text: 'مرحبا 👋' },
+  { from: 'bot',  text: 'أهلاً وسهلاً! 😊 أنا لين، مساعدتك الذكية\nكيف يمكنني مساعدتك اليوم؟' },
+  { from: 'user', text: 'هل عندكم موعد بكرة؟' },
+  { from: 'bot',  text: 'بالتأكيد! 🌸 قبل كل شيء\nما اسمك الكريم؟' },
+  { from: 'user', text: 'سارة' },
+  { from: 'bot',  text: 'أهلاً سارة! ✨ لدينا مواعيد متاحة غداً\nأي خدمة تودين؟\n💇‍♀️ قص شعر\n🎨 صبغة\n✨ كيراتين' },
   { from: 'user', text: 'صبغة' },
-  { from: 'bot',  text: 'المواعيد المتاحة غداً:\n🕙 10:00 ص\n🕓 4:00 م\nأيهم يناسبك؟' },
+  { from: 'bot',  text: 'ممتاز سارة! 🎨\nالمواعيد المتاحة غداً:\n🕙 10:00 ص\n🕐 2:00 م\n🕓 4:00 م\nأيهم يناسبك؟' },
   { from: 'user', text: '4 العصر' },
-  { from: 'bot',  text: '✅ تم الحجز!\nغداً 4:00 عصراً\nصبغة شعر 💇‍♀️\nسنذكرك قبل ساعة 🌸' },
+  { from: 'bot',  text: '✅ تم الحجز بنجاح!\n📅 غداً - 4:00 عصراً\n💇‍♀️ صبغة شعر\nسنذكرك قبل ساعة 🌸\nإلى اللقاء سارة! 😊' },
 ];
 
 const MESSAGES_EN = [
-  { from: 'user', text: 'Hi! Any appointments available tomorrow?' },
-  { from: 'bot',  text: 'Hello! Yes, we have slots 😊\nWhich service would you like?\n• Haircut\n• Hair Color\n• Keratin' },
+  { from: 'user', text: 'Hi there 👋' },
+  { from: 'bot',  text: "Hello! 😊 I'm Lina, your smart assistant\nHow can I help you today?" },
+  { from: 'user', text: 'Any appointments tomorrow?' },
+  { from: 'bot',  text: "Of course! 🌸 Before anything\nWhat's your name?" },
+  { from: 'user', text: 'Sarah' },
+  { from: 'bot',  text: "Welcome Sarah! ✨ We have slots available tomorrow\nWhich service would you like?\n💇‍♀️ Haircut\n🎨 Hair Color\n✨ Keratin" },
   { from: 'user', text: 'Hair Color' },
-  { from: 'bot',  text: "Available slots tomorrow:\n🕙 10:00 AM\n🕓 4:00 PM\nWhich works for you?" },
-  { from: 'user', text: '4:00 PM please' },
-  { from: 'bot',  text: "✅ Booked!\nTomorrow at 4:00 PM\nHair Color 💇‍♀️\nWe'll remind you 1 hour before 🌸" },
+  { from: 'bot',  text: "Great choice Sarah! 🎨\nAvailable slots tomorrow:\n🕙 10:00 AM\n🕐 2:00 PM\n🕓 4:00 PM\nWhich works for you?" },
+  { from: 'user', text: '4:00 PM' },
+  { from: 'bot',  text: "✅ Booked successfully!\n📅 Tomorrow - 4:00 PM\n🎨 Hair Color\nWe'll remind you 1 hour before 🌸\nSee you Sarah! 😊" },
 ];
 
-export default function AnimatedChat({ minHeight = 300 }) {
+export default function AnimatedChat() {
   const { i18n } = useTranslation();
   const isAr = i18n.language === 'ar';
   const messages = isAr ? MESSAGES_AR : MESSAGES_EN;
@@ -78,7 +86,7 @@ export default function AnimatedChat({ minHeight = 300 }) {
         </div>
       </div>
 
-      <div className="ln-chat-body" ref={bodyRef} style={{ minHeight }}>
+      <div className="ln-chat-body" ref={bodyRef}>
         {messages.map((msg, i) =>
           visible.includes(i) ? (
             <div key={i} className={`ln-chat-msg ${msg.from}`}>{msg.text}</div>

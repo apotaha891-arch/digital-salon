@@ -17,6 +17,7 @@ import AdminClients from './pages/admin/AdminClients';
 import AdminSettings from './pages/admin/AdminSettings';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
+import SalonConcierge from './components/SalonConcierge';
 import './index.css';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -39,6 +40,8 @@ const AppRoutes = () => {
   }, [i18n.language]);
 
   return (
+    <>
+    <SalonConcierge lang={i18n.language} />
     <Routes>
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
 
@@ -60,6 +63,7 @@ const AppRoutes = () => {
       <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Landing />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
+    </>
   );
 };
 

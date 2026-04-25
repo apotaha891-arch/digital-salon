@@ -4,6 +4,7 @@ import { sendFacebookMessage } from './channels/facebook.js'
 import { sendInstagramMessage } from './channels/instagram.js'
 import { sendWhatsAppMessage } from './channels/whatsapp.js'
 import { getAutoReply } from './autoReply.js'
+import { createTicketIfComplaint } from './ticketUtils.js'
 
 export const webhookRouter = Router()
 
@@ -76,6 +77,7 @@ async function handleFacebook(payload) {
 
       console.log(`[FACEBOOK] Message from ${senderId}: "${text}"`)
 
+      await createTicketIfComplaint({ channel: 'facebook', customerName: senderId, message: text })
       const reply = getAutoReply('facebook', text)
       await sendFacebookMessage(senderId, reply)
     }
@@ -94,6 +96,7 @@ async function handleInstagram(payload) {
 
       console.log(`[INSTAGRAM] Message from ${senderId}: "${text}"`)
 
+      await createTicketIfComplaint({ channel: 'instagram', customerName: senderId, message: text })
       const reply = getAutoReply('instagram', text)
       await sendInstagramMessage(senderId, reply)
     }
@@ -116,6 +119,7 @@ async function handleWhatsApp(payload) {
         const name = value.contacts?.[0]?.profile?.name || ''
         console.log(`[WHATSAPP] Message from ${phone} (${name}): "${text}"`)
 
+        await createTicketIfComplaint({ channel: 'whatsapp', customerName: name || phone, message: text })
         const reply = getAutoReply('whatsapp', text)
         await sendWhatsAppMessage(phone, reply)
       }

@@ -6,6 +6,7 @@ import { useAgent } from '../hooks/useAgent';
 import { useBusiness } from '../hooks/useBusiness';
 import { useWallet } from '../hooks/useWallet';
 import { useIntegrations } from '../hooks/useIntegrations';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 import { Plug, CreditCard, Settings, MessageSquare, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
 
 import StatCard from '../components/ui/StatCard';
@@ -22,8 +23,9 @@ export default function Dashboard() {
   const { business, loading: bLoading } = useBusiness(user?.id);
   const { wallet, loading: wLoading } = useWallet(user?.id);
   const { integrations, loading: iLoading } = useIntegrations(user?.id);
+  const { stats, loading: sLoading } = useDashboardStats(user?.id);
 
-  const loading = aLoading || bLoading || wLoading || iLoading;
+  const loading = aLoading || bLoading || wLoading || iLoading || sLoading;
 
   useEffect(() => {
     if (!loading && !agent && !business) navigate('/setup');
@@ -32,10 +34,13 @@ export default function Dashboard() {
   if (loading) return <Spinner centered />;
 
   const activeIntegrationsCount = integrations.filter(i => {
+    if (!i.is_active) return false;
+    if (i.provider === 'facebook' || i.provider === 'instagram')
+      return !!i.config?.page_id && !!i.config?.access_token;
     if (i.provider === 'telegram') return !!i.config?.token;
     if (i.provider === 'whatsapp') return !!i.config?.token && !!i.config?.phone_id;
-    if (i.provider === 'widget') return !!i.config?.domain;
-    return false;
+    if (i.provider === 'widget')   return !!i.config?.domain;
+    return true;
   }).length;
 
   const tokenBalance = wallet?.balance ?? 0;
@@ -156,8 +161,8 @@ export default function Dashboard() {
 
       {/* ── Stats Grid ── */}
       <div className="stats-grid" style={{ marginBottom: activeIntegrationsCount === 0 ? 16 : 28 }}>
-        <StatCard label={t('dashboard.stats.messages')} value={agent?.messages_today || 0} />
-        <StatCard label={t('dashboard.stats.bookings')} value={agent?.bookings_today || 0} />
+        <StatCard label={t('dashboard.stats.messages')} value={stats.messagesToday} />
+        <StatCard label={t('dashboard.stats.bookings')} value={stats.bookingsToday} />
         <StatCard label={t('dashboard.stats.tools')} value={activeIntegrationsCount} />
         <StatCard label={t('dashboard.stats.tokens')} value={tokenBalance} color={lowBalance ? 'var(--error)' : 'var(--success)'} />
       </div>

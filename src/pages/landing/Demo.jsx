@@ -17,9 +17,9 @@ export default function Demo() {
         <div
           ref={ref}
           className={`ln-fade-up ${inView ? 'ln-visible' : ''}`}
-          style={{ maxWidth: 500, margin: '0 auto' }}
+          style={{ maxWidth: 500, margin: '0 auto', minHeight: 580 }}
         >
-          <AnimatedChat minHeight={360} />
+          <AnimatedChat />
 
           <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', marginTop: 16 }}>
             🔒 {t('landing.demo.subtitle')}

@@ -242,13 +242,13 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
 
   return (
     <div className="fade-in">
-      <div className="integration-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="integration-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'stretch' }}>
         {INTEGRATION_TOOLS.map((tool) => {
           const config = localConfigs[tool.id] || {};
           const isLinked = tool.checkLink(config);
           
           return (
-            <div key={tool.id} className="glass-card" style={{ padding: 24 }}>
+            <div key={tool.id} className="glass-card" style={{ padding: 24, display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                 <div style={{ 
                   width: 48, height: 48, borderRadius: 12, 
@@ -265,7 +265,7 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                 </div>
               </div>
               <h4 style={{ fontWeight: 900, fontSize: 16, marginBottom: 8 }}>{tool.name}</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, marginBottom: 16 }}>
                 {tool.fields.map(field => (
                   <div key={`${tool.id}-${field.name}`}>
                     <label style={{ fontSize: 10, opacity: 0.6, marginBottom: 4, display: 'block' }}>{field.label}</label>
