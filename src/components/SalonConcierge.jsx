@@ -40,14 +40,6 @@ export default function SalonConcierge({ lang = 'ar' }) {
     return () => clearTimeout(t);
   }, []);
 
-  // Auto-open after 45 s (only if never opened)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setOpen(prev => { if (!prev) { setShowTooltip(false); return true; } return prev; });
-    }, 45000);
-    return () => clearTimeout(t);
-  }, []);
-
   // Scroll body to bottom on new messages
   useEffect(() => {
     if (bodyRef.current)
