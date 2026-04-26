@@ -36,14 +36,17 @@ export default function Setup() {
   const [localBusiness, setLocalBusiness] = useState(null);
   const [localAgent, setLocalAgent] = useState(null);
 
+  const DEFAULT_BUSINESS = { name: '', phone: '', location: '', hours: '', instagram: '', services: [], metadata: {} };
+  const DEFAULT_AGENT = { name: 'لين', avatar: '💅', instructions: '', is_active: false, model_provider: 'gemini' };
+
   // Sync local state when hook data loads
   useEffect(() => {
-    if (business && !localBusiness) setLocalBusiness(business);
-  }, [business, localBusiness]);
+    if (!bLoading && !localBusiness) setLocalBusiness(business || DEFAULT_BUSINESS);
+  }, [bLoading, business]);
 
   useEffect(() => {
-    if (agent && !localAgent) setLocalAgent(agent);
-  }, [agent, localAgent]);
+    if (!aLoading && !localAgent) setLocalAgent(agent || DEFAULT_AGENT);
+  }, [aLoading, agent]);
 
   const loading = bLoading || aLoading || iLoading;
   const saving = bSaving || aSaving;
@@ -63,7 +66,7 @@ export default function Setup() {
     }
   };
 
-  if (loading || !localBusiness || !localAgent) return <Spinner centered />;
+  if (loading || !localBusiness || !localAgent) return <Spinner centered={true} />;
 
   return (
     <div className="fade-in" style={{ paddingBottom: 60 }}>
