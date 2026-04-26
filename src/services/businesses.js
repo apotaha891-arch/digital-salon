@@ -13,7 +13,10 @@ export const getBusiness = async (userId) => {
 export const upsertBusiness = async (userId, businessData) => {
   const { data, error } = await supabase
     .from('businesses')
-    .upsert({ user_id: userId, ...businessData, updated_at: new Date().toISOString() })
+    .upsert(
+      { user_id: userId, ...businessData, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id' }
+    )
     .select()
     .single();
   if (error) throw error;

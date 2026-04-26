@@ -9,7 +9,7 @@ const corsHeaders = {
 }
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
 const EXTRACT_PROMPT = `You are a business data extractor. Given the following text from a salon/beauty business website or document, extract the business information and return it as valid JSON only — no markdown, no explanation.
 
@@ -56,23 +56,39 @@ serve(async (req: Request) => {
       const { url } = await req.json()
       if (!url) throw new Error('url is required')
 
-      console.log(`[EXTRACT] Fetching URL: ${url}`)
-      const pageRes = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DigitalSalon/1.0)' },
-        signal: AbortSignal.timeout(10000),
-      })
+      // Strip booking/query params — try the clean base path for better content
+      const parsed = new URL(url.startsWith('http') ? url : `https://${url}`)
+      const cleanUrl = `${parsed.origin}${parsed.pathname.replace(/\/booking.*/, '')}`
+      console.log(`[EXTRACT] Fetching URL: ${cleanUrl}`)
 
-      if (!pageRes.ok) throw new Error(`Failed to fetch URL: ${pageRes.status}`)
+      const fetchPage = async (target: string) => {
+        const res = await fetch(target, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+          signal: AbortSignal.timeout(12000),
+        })
+        const html = await res.text()
+        return html
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&[a-z]+;/gi, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+      }
 
-      const html = await pageRes.text()
-      // Strip HTML tags, keep readable text
-      textContent = html
-        .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[\s\S]*?<\/style>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .substring(0, 8000)
+      // Try clean URL first, fall back to original
+      let html1 = await fetchPage(cleanUrl)
+      if (html1.length < 200 && cleanUrl !== url) {
+        html1 = await fetchPage(url)
+      }
+
+      // Also include URL slug as a hint for AI extraction
+      const slugHint = `URL slug: ${parsed.pathname}\n\n`
+      textContent = (slugHint + html1).substring(0, 8000)
 
     // ── File extraction ──
     } else if (contentType.includes('multipart/form-data')) {
