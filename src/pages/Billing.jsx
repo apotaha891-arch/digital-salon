@@ -56,6 +56,8 @@ export default function Billing() {
   const [topups, setTopups] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(null);
+  const [toast, setToast] = useState('');
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 4000); };
 
   // Load plans and subscription from DB
   useEffect(() => {
@@ -119,14 +121,14 @@ export default function Billing() {
       });
       if (result.url) window.location.href = result.url;
     } catch (err) {
-      alert(err.message);
+      showToast('❌ ' + err.message);
     } finally {
       setCheckoutLoading(null);
     }
   };
 
   const handleTopUp = async (pkg) => {
-    if (!pkg.id) return alert(isAr ? 'هذه الحزمة غير متاحة بعد' : 'This package is not available yet');
+    if (!pkg.id) return showToast(isAr ? '⚠️ هذه الحزمة غير متاحة بعد' : '⚠️ This package is not available yet');
     try {
       setCheckoutLoading(pkg.id);
       const result = await createCheckoutSession('topup', {
@@ -136,7 +138,7 @@ export default function Billing() {
       });
       if (result.url) window.location.href = result.url;
     } catch (err) {
-      alert(err.message);
+      showToast('❌ ' + err.message);
     } finally {
       setCheckoutLoading(null);
     }
@@ -146,6 +148,15 @@ export default function Billing() {
 
   return (
     <div className="fade-in">
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 600,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        }}>{toast}</div>
+      )}
       {/* ═══ HEADER + CURRENT PLAN OVERVIEW ═══ */}
       <div style={{ marginBottom: 28 }}>
         <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

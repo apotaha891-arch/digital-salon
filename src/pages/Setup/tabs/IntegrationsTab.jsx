@@ -173,6 +173,8 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
   const [copied, setCopied] = useState(false);
   const [localConfigs, setLocalConfigs] = useState(activeTools || {});
   const [expandedSection, setExpandedSection] = useState(0);
+  const [toast, setToast] = useState('');
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
   const isAr = i18n.language === 'ar';
 
   const INTEGRATION_TOOLS = [
@@ -242,6 +244,14 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
 
   return (
     <div className="fade-in">
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 600,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        }}>{toast}</div>
+      )}
       <div className="integration-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, alignItems: 'stretch' }}>
         {INTEGRATION_TOOLS.map((tool) => {
           const config = localConfigs[tool.id] || {};
@@ -292,9 +302,9 @@ export default function IntegrationsTab({ activeTools, agentId, agentName, onToo
                 onClick={async () => {
                   try {
                     await onToolSave(tool.id, config);
-                    alert('✅ ' + t('common.success_saved') || 'Settings saved successfully!');
+                    showToast('✅ ' + (t('common.success_saved') || 'Settings saved successfully!'));
                   } catch (e) {
-                    alert('❌ Save failed: ' + e.message);
+                    showToast('❌ Save failed: ' + e.message);
                   }
                 }} 
                 className="btn btn-primary btn-sm btn-full" 

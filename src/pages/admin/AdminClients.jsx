@@ -63,6 +63,10 @@ export default function AdminClients() {
   // Search
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Toast
+  const [toast, setToast] = useState('');
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
+
   const handleAddCredits = async () => {
     if (!selectedClient) return;
     setSaving(true);
@@ -96,9 +100,9 @@ export default function AdminClients() {
     setIntSaving(platformId);
     try {
       await adminUpsertIntegration(intClient.id, platformId, intConfigs[platformId] || {});
-      alert(`✅ ${isAr ? 'تم حفظ إعدادات' : 'Saved'} ${platformId}`);
+      showToast(`✅ ${isAr ? 'تم حفظ إعدادات' : 'Saved'} ${platformId}`);
     } catch (e) {
-      alert(`❌ ${e.message}`);
+      showToast(`❌ ${e.message}`);
     } finally {
       setIntSaving(null);
     }
@@ -115,6 +119,14 @@ export default function AdminClients() {
 
   return (
     <div className="fade-in">
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 600,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        }}>{toast}</div>
+      )}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="page-title">{t('admin.clients.title')}</h1>
