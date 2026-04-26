@@ -83,6 +83,28 @@ export const adminTogglePlan = async (planId, isActive) => {
   return data;
 };
 
+// ─── Platform Token Cost Settings ───
+
+export const adminGetPlatformSettings = async () => {
+  const { data, error } = await supabase
+    .from('platform_settings')
+    .select('*')
+    .order('platform');
+  if (error) throw error;
+  return data || [];
+};
+
+export const adminUpdatePlatformSetting = async (platform, tokenCost) => {
+  const { data, error } = await supabase
+    .from('platform_settings')
+    .update({ token_cost: tokenCost, updated_at: new Date().toISOString() })
+    .eq('platform', platform)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
 // ─── Agent/Salon Profile Management ───
 
 export const adminGetClientAgent = async (userId) => {

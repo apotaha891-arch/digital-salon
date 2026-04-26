@@ -1,40 +1,85 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Settings, Users, Zap, CreditCard, TrendingUp, Edit3, Save, X,
   ToggleLeft, ToggleRight, Package, MessageCircle, Send, Globe,
-  CheckCircle, AlertCircle, Loader2, RefreshCw, Crown, Star, Building2
+  CheckCircle, Loader2, RefreshCw, Crown, Star, Building2
 } from 'lucide-react';
-import { adminGetPlans, adminUpdatePlan, adminTogglePlan, adminGetAllClients } from '../../services/admin';
-import { supabase } from '../../services/supabase';
+import {
+  adminGetPlans, adminUpdatePlan, adminTogglePlan, adminGetAllClients,
+  adminGetPlatformSettings, adminUpdatePlatformSetting,
+} from '../../services/admin';
 import Spinner from '../../components/ui/Spinner';
 
-const PLATFORM_COSTS = [
-  { id: 'telegram',  label: 'Telegram',  icon: Send,          color: '#0088cc', cost: 1 },
-  { id: 'whatsapp',  label: 'WhatsApp',  icon: MessageCircle, color: '#25D366', cost: 3 },
-  { id: 'instagram', label: 'Instagram', icon: Send,          color: '#E1306C', cost: 2 },
-  { id: 'facebook',  label: 'Facebook',  icon: Send,          color: '#0084FF', cost: 2 },
-  { id: 'widget',    label: 'Widget',    icon: Globe,         color: '#D946EF', cost: 2 },
-];
+const PLATFORM_META = {
+  whatsapp:  { label: 'WhatsApp',  icon: MessageCircle, color: '#25D366' },
+  instagram: { label: 'Instagram', icon: Send,          color: '#E1306C' },
+  facebook:  { label: 'Facebook',  icon: Send,          color: '#0084FF' },
+  telegram:  { label: 'Telegram',  icon: Send,          color: '#0088cc' },
+  widget:    { label: 'Widget',    icon: Globe,         color: '#D946EF' },
+  concierge: { label: 'Concierge', icon: Globe,         color: '#8B5CF6' },
+};
 
 const PLAN_ICONS = { starter: Star, pro: Crown, business: Building2 };
 
-export default function AdminSettings() {
-  const [plans, setPlans]       = useState([]);
-  const [clients, setClients]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [editingPlan, setEditingPlan] = useState(null); // plan id being edited
-  const [draftPlan, setDraftPlan]     = useState({});
-  const [saving, setSaving]     = useState(null);
-  const [toast, setToast]       = useState('');
+const Field = ({ label, value, editing, onChange, type = 'text', step }) => (
+  <div>
+    <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 4 }}>{label}</div>
+    {editing ? (
+      <input
+        type={type} step={step} value={value ?? ''}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13,
+          background: 'var(--surface)', border: '1px solid var(--primary)',
+          color: 'var(--text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+        }}
+      />
+    ) : (
+      <div style={{
+        padding: '7px 10px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+        background: 'var(--surface2)', border: '1px solid var(--border)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {value ?? '—'}
+      </div>
+    )}
+  </div>
+);
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+export default function AdminSettings() {
+  const { i18n } = useTranslation();
+  const ar = i18n.language === 'ar';
+
+  const [plans, setPlans]               = useState([]);
+  const [clients, setClients]           = useState([]);
+  const [platformSettings, setPlatform] = useState([]);
+  const [loading, setLoading]           = useState(true);
+
+  // Plans editing
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [draftPlan, setDraftPlan]     = useState({});
+  const [savingPlan, setSavingPlan]   = useState(null);
+
+  // Platform cost editing
+  const [editingCosts, setEditingCosts] = useState(false);
+  const [draftCosts, setDraftCosts]     = useState({});
+  const [savingCosts, setSavingCosts]   = useState(false);
+
+  const [toast, setToast] = useState('');
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3500); };
 
   const load = async () => {
     setLoading(true);
     try {
-      const [p, c] = await Promise.all([adminGetPlans(), adminGetAllClients()]);
+      const [p, c, ps] = await Promise.all([
+        adminGetPlans(),
+        adminGetAllClients(),
+        adminGetPlatformSettings(),
+      ]);
       setPlans(p);
       setClients(c);
+      setPlatform(ps);
     } finally {
       setLoading(false);
     }
@@ -42,15 +87,12 @@ export default function AdminSettings() {
 
   useEffect(() => { load(); }, []);
 
-  const startEdit = (plan) => {
-    setEditingPlan(plan.id);
-    setDraftPlan({ ...plan });
-  };
-
-  const cancelEdit = () => { setEditingPlan(null); setDraftPlan({}); };
+  // ── Plan helpers ──
+  const startEditPlan = (plan) => { setEditingPlan(plan.id); setDraftPlan({ ...plan }); };
+  const cancelEditPlan = () => { setEditingPlan(null); setDraftPlan({}); };
 
   const savePlan = async () => {
-    setSaving(editingPlan);
+    setSavingPlan(editingPlan);
     try {
       const updated = await adminUpdatePlan(editingPlan, {
         name:                  draftPlan.name,
@@ -63,45 +105,71 @@ export default function AdminSettings() {
         is_active:             draftPlan.is_active,
       });
       setPlans(prev => prev.map(p => p.id === updated.id ? updated : p));
-      cancelEdit();
-      showToast('✅ Plan saved successfully');
-    } catch (e) {
-      showToast(`❌ ${e.message}`);
-    } finally {
-      setSaving(null);
-    }
+      cancelEditPlan();
+      showToast(ar ? '✅ تم حفظ الخطة' : '✅ Plan saved');
+    } catch (e) { showToast(`❌ ${e.message}`); }
+    finally { setSavingPlan(null); }
   };
 
   const togglePlan = async (plan) => {
-    setSaving(plan.id);
+    setSavingPlan(plan.id);
     try {
       await adminTogglePlan(plan.id, !plan.is_active);
       setPlans(prev => prev.map(p => p.id === plan.id ? { ...p, is_active: !p.is_active } : p));
-      showToast(`${!plan.is_active ? '✅ Plan activated' : '⏸ Plan deactivated'}`);
-    } catch (e) {
-      showToast(`❌ ${e.message}`);
-    } finally {
-      setSaving(null);
-    }
+      showToast(!plan.is_active
+        ? (ar ? '✅ الخطة نشطة' : '✅ Plan activated')
+        : (ar ? '⏸ الخطة موقوفة' : '⏸ Plan deactivated'));
+    } catch (e) { showToast(`❌ ${e.message}`); }
+    finally { setSavingPlan(null); }
+  };
+
+  // ── Platform cost helpers ──
+  const startEditCosts = () => {
+    const map = {};
+    platformSettings.forEach(ps => { map[ps.platform] = ps.token_cost; });
+    setDraftCosts(map);
+    setEditingCosts(true);
+  };
+  const cancelEditCosts = () => { setEditingCosts(false); setDraftCosts({}); };
+
+  const saveCosts = async () => {
+    setSavingCosts(true);
+    try {
+      await Promise.all(
+        Object.entries(draftCosts).map(([platform, cost]) =>
+          adminUpdatePlatformSetting(platform, Number(cost))
+        )
+      );
+      const updated = platformSettings.map(ps => ({
+        ...ps,
+        token_cost: Number(draftCosts[ps.platform] ?? ps.token_cost),
+      }));
+      setPlatform(updated);
+      setEditingCosts(false);
+      showToast(ar ? '✅ تم حفظ تكاليف المنصات' : '✅ Platform costs saved');
+    } catch (e) { showToast(`❌ ${e.message}`); }
+    finally { setSavingCosts(false); }
   };
 
   if (loading) return <Spinner centered />;
 
-  // ── Stats ──
-  const activeClients   = clients.filter(c => c.is_active).length;
-  const activeAgents    = clients.filter(c => c.agent_active).length;
-  const totalTokens     = clients.reduce((s, c) => s + (c.wallet_balance || 0), 0);
-  const activePlans     = plans.filter(p => p.is_active).length;
+  const activeClients = clients.filter(c => c.is_active).length;
+  const activeAgents  = clients.filter(c => c.agent_active).length;
+  const totalTokens   = clients.reduce((s, c) => s + (c.wallet_balance || 0), 0);
+  const activePlans   = plans.filter(p => p.is_active).length;
+
+  const t = (en, arText) => ar ? arText : en;
 
   return (
     <div className="fade-in" style={{ paddingBottom: 60 }}>
+
       {/* Toast */}
       {toast && (
         <div style={{
           position: 'fixed', top: 24, right: 24, zIndex: 9999,
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 12, padding: '12px 20px', fontSize: 13, fontWeight: 600,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
         }}>{toast}</div>
       )}
 
@@ -109,37 +177,40 @@ export default function AdminSettings() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
         <div>
           <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Settings size={26} style={{ color: 'var(--primary)' }} /> إعدادات المنصة
+            <Settings size={26} style={{ color: 'var(--primary)' }} />
+            {t('Platform Settings', 'إعدادات المنصة')}
           </h1>
-          <p className="page-subtitle">تحكم كامل في خطط الاشتراك والإعدادات</p>
+          <p className="page-subtitle">
+            {t('Full control over subscription plans and platform configuration', 'تحكم كامل في خطط الاشتراك والإعدادات')}
+          </p>
         </div>
         <button onClick={load} style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '9px 16px', borderRadius: 10, border: '1px solid var(--border)',
           background: 'var(--surface)', color: 'var(--text-muted)',
-          fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit'
+          fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
         }}>
-          <RefreshCw size={14} /> تحديث
+          <RefreshCw size={14} /> {t('Refresh', 'تحديث')}
         </button>
       </div>
 
       {/* ── Stats Row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         {[
-          { icon: Users,       label: 'إجمالي العملاء',  value: clients.length,  color: '#8B5CF6' },
-          { icon: CheckCircle, label: 'العملاء النشطين', value: activeClients,   color: '#10B981' },
-          { icon: Zap,         label: 'إجمالي التوكنات', value: totalTokens.toLocaleString(), color: '#F59E0B' },
-          { icon: Package,     label: 'الخطط النشطة',    value: activePlans,     color: '#D946EF' },
+          { icon: Users,        label: t('Total Clients', 'إجمالي العملاء'),   value: clients.length,                  color: '#8B5CF6' },
+          { icon: CheckCircle,  label: t('Active Clients', 'العملاء النشطين'), value: activeClients,                   color: '#10B981' },
+          { icon: Zap,          label: t('Total Tokens', 'إجمالي التوكنات'),   value: totalTokens.toLocaleString(),    color: '#F59E0B' },
+          { icon: Package,      label: t('Active Plans', 'الخطط النشطة'),      value: activePlans,                     color: '#D946EF' },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} style={{
             padding: '20px 24px', borderRadius: 16,
             background: 'var(--surface)', border: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', gap: 14
+            display: 'flex', alignItems: 'center', gap: 14,
           }}>
             <div style={{
               width: 44, height: 44, borderRadius: 12,
               background: `${color}15`, color,
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Icon size={22} />
             </div>
@@ -154,16 +225,19 @@ export default function AdminSettings() {
       {/* ── Subscription Plans ── */}
       <div style={{
         background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 20, overflow: 'hidden', marginBottom: 28
+        borderRadius: 20, overflow: 'hidden', marginBottom: 28,
       }}>
         <div style={{
           padding: '20px 28px', borderBottom: '1px solid var(--border)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <h2 style={{ fontWeight: 900, fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CreditCard size={18} style={{ color: 'var(--primary)' }} /> إدارة خطط الاشتراك
+            <CreditCard size={18} style={{ color: 'var(--primary)' }} />
+            {t('Subscription Plans', 'إدارة خطط الاشتراك')}
           </h2>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{plans.length} خطة</span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            {plans.length} {t('plans', 'خطة')}
+          </span>
         </div>
 
         <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -174,19 +248,20 @@ export default function AdminSettings() {
 
             return (
               <div key={plan.id} style={{
-                borderRadius: 16, border: `1px solid ${isEditing ? 'var(--primary)' : 'var(--border)'}`,
+                borderRadius: 16,
+                border: `1px solid ${isEditing ? 'var(--primary)' : 'var(--border)'}`,
                 overflow: 'hidden', transition: 'border-color 0.2s',
-                background: isEditing ? 'rgba(217,70,239,0.02)' : 'transparent'
+                background: isEditing ? 'rgba(217,70,239,0.02)' : 'transparent',
               }}>
                 {/* Plan Header */}
                 <div style={{
                   padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14,
-                  borderBottom: '1px solid var(--border)', background: 'var(--surface2)'
+                  borderBottom: '1px solid var(--border)', background: 'var(--surface2)',
                 }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: 10,
                     background: 'rgba(217,70,239,0.1)', color: 'var(--primary)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Icon size={18} />
                   </div>
@@ -198,52 +273,52 @@ export default function AdminSettings() {
                     {/* Active toggle */}
                     <button
                       onClick={() => !isEditing && togglePlan(plan)}
-                      disabled={saving === plan.id}
+                      disabled={savingPlan === plan.id}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 5,
                         padding: '4px 12px', borderRadius: 8, border: 'none',
                         background: plan.is_active ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
                         color: plan.is_active ? '#10B981' : '#EF4444',
-                        fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
+                        fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                       }}
                     >
-                      {saving === plan.id && !isEditing
+                      {savingPlan === plan.id && !isEditing
                         ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
                         : plan.is_active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />
                       }
-                      {plan.is_active ? 'نشطة' : 'موقوفة'}
+                      {plan.is_active ? t('Active', 'نشطة') : t('Inactive', 'موقوفة')}
                     </button>
                     {/* Edit / Save / Cancel */}
                     {isEditing ? (
                       <>
-                        <button onClick={cancelEdit} style={{
+                        <button onClick={cancelEditPlan} style={{
                           padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)',
                           background: 'transparent', color: 'var(--text-muted)',
                           fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                          display: 'flex', alignItems: 'center', gap: 4
+                          display: 'flex', alignItems: 'center', gap: 4,
                         }}>
-                          <X size={12} /> إلغاء
+                          <X size={12} /> {t('Cancel', 'إلغاء')}
                         </button>
-                        <button onClick={savePlan} disabled={saving === plan.id} style={{
+                        <button onClick={savePlan} disabled={savingPlan === plan.id} style={{
                           padding: '5px 12px', borderRadius: 8, border: 'none',
                           background: 'var(--primary)', color: 'white',
                           fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                          display: 'flex', alignItems: 'center', gap: 4
+                          display: 'flex', alignItems: 'center', gap: 4,
                         }}>
-                          {saving === plan.id
+                          {savingPlan === plan.id
                             ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
-                            : <><Save size={12} /> حفظ</>
+                            : <><Save size={12} /> {t('Save', 'حفظ')}</>
                           }
                         </button>
                       </>
                     ) : (
-                      <button onClick={() => startEdit(plan)} style={{
+                      <button onClick={() => startEditPlan(plan)} style={{
                         padding: '5px 12px', borderRadius: 8, border: '1px solid var(--border)',
                         background: 'transparent', color: 'var(--text)',
                         fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                        display: 'flex', alignItems: 'center', gap: 4
+                        display: 'flex', alignItems: 'center', gap: 4,
                       }}>
-                        <Edit3 size={12} /> تعديل
+                        <Edit3 size={12} /> {t('Edit', 'تعديل')}
                       </button>
                     )}
                   </div>
@@ -252,42 +327,25 @@ export default function AdminSettings() {
                 {/* Plan Fields */}
                 <div style={{
                   padding: '16px 20px',
-                  display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12
+                  display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
                 }}>
                   {[
-                    { key: 'price_usd',             label: 'السعر ($)',              type: 'number' },
-                    { key: 'monthly_tokens',         label: 'التوكنات / شهر',        type: 'number' },
-                    { key: 'trial_days',             label: 'أيام التجربة',          type: 'number' },
-                    { key: 'topup_price_per_token',  label: 'سعر التوكن الإضافي ($)',type: 'number', step: '0.01' },
-                    { key: 'stripe_price_id',        label: 'Stripe Price ID',       type: 'text'   },
-                    { key: 'name_ar',                label: 'الاسم بالعربي',         type: 'text'   },
+                    { key: 'price_usd',            label: t('Price (USD)', 'السعر ($)'),                       type: 'number' },
+                    { key: 'monthly_tokens',        label: t('Tokens / Month', 'التوكنات / شهر'),               type: 'number' },
+                    { key: 'trial_days',            label: t('Trial Days', 'أيام التجربة'),                     type: 'number' },
+                    { key: 'topup_price_per_token', label: t('Top-up Price / Token ($)', 'سعر التوكن الإضافي ($)'), type: 'number', step: '0.001' },
+                    { key: 'stripe_price_id',       label: 'Stripe Price ID',                                   type: 'text' },
+                    { key: 'name_ar',               label: t('Arabic Name', 'الاسم بالعربي'),                   type: 'text' },
                   ].map(({ key, label, type, step }) => (
-                    <div key={key}>
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 4 }}>{label}</div>
-                      {isEditing ? (
-                        <input
-                          type={type}
-                          step={step}
-                          value={draft[key] ?? ''}
-                          onChange={e => setDraftPlan(prev => ({ ...prev, [key]: e.target.value }))}
-                          style={{
-                            width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13,
-                            background: 'var(--surface)', border: '1px solid var(--border)',
-                            color: 'var(--text)', outline: 'none', fontFamily: 'inherit',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                      ) : (
-                        <div style={{
-                          padding: '7px 10px', borderRadius: 8, fontSize: 13,
-                          background: 'var(--surface2)', border: '1px solid var(--border)',
-                          fontWeight: 600, color: 'var(--text)',
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                        }}>
-                          {draft[key] ?? '—'}
-                        </div>
-                      )}
-                    </div>
+                    <Field
+                      key={key}
+                      label={label}
+                      value={draft[key]}
+                      editing={isEditing}
+                      type={type}
+                      step={step}
+                      onChange={val => setDraftPlan(prev => ({ ...prev, [key]: val }))}
+                    />
                   ))}
                 </div>
               </div>
@@ -296,59 +354,128 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      {/* ── Token Pricing (read-only reference) ── */}
+      {/* ── Platform Token Costs ── */}
       <div style={{
         background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 20, overflow: 'hidden', marginBottom: 28
+        borderRadius: 20, overflow: 'hidden', marginBottom: 28,
       }}>
-        <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)' }}>
-          <h2 style={{ fontWeight: 900, fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Zap size={18} style={{ color: 'var(--primary)' }} /> تكلفة التوكنات لكل منصة
-          </h2>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
-            مُحدَّد في كود messenger — لتغييره عدّل messenger/index.ts
-          </p>
-        </div>
-        <div style={{ padding: 24, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-          {PLATFORM_COSTS.map(({ label, icon: Icon, color, cost }) => (
-            <div key={label} style={{
-              padding: '16px 14px', borderRadius: 14, textAlign: 'center',
-              background: `${color}08`, border: `1px solid ${color}25`
-            }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10, margin: '0 auto 10px',
-                background: `${color}15`, color,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
+        <div style={{
+          padding: '20px 28px', borderBottom: '1px solid var(--border)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <div>
+            <h2 style={{ fontWeight: 900, fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Zap size={18} style={{ color: 'var(--primary)' }} />
+              {t('Token Cost per Platform', 'تكلفة التوكنات لكل منصة')}
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+              {t('Tokens deducted per AI message on each channel', 'عدد التوكنات المخصومة لكل رسالة ذكاء اصطناعي')}
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {editingCosts ? (
+              <>
+                <button onClick={cancelEditCosts} style={{
+                  padding: '7px 16px', borderRadius: 9, border: '1px solid var(--border)',
+                  background: 'transparent', color: 'var(--text-muted)',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}>
+                  <X size={13} /> {t('Cancel', 'إلغاء')}
+                </button>
+                <button onClick={saveCosts} disabled={savingCosts} style={{
+                  padding: '7px 16px', borderRadius: 9, border: 'none',
+                  background: 'var(--primary)', color: 'white',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 5,
+                }}>
+                  {savingCosts
+                    ? <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />
+                    : <><Save size={13} /> {t('Save All', 'حفظ الكل')}</>
+                  }
+                </button>
+              </>
+            ) : (
+              <button onClick={startEditCosts} style={{
+                padding: '7px 16px', borderRadius: 9, border: '1px solid var(--border)',
+                background: 'transparent', color: 'var(--text)',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', gap: 5,
               }}>
-                <Icon size={18} />
+                <Edit3 size={13} /> {t('Edit Costs', 'تعديل التكاليف')}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div style={{ padding: 24, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+          {platformSettings.map(ps => {
+            const meta = PLATFORM_META[ps.platform] || { label: ps.platform, icon: Globe, color: '#888' };
+            const Icon = meta.icon;
+            const cost = editingCosts ? (draftCosts[ps.platform] ?? ps.token_cost) : ps.token_cost;
+
+            return (
+              <div key={ps.platform} style={{
+                padding: '18px 16px', borderRadius: 14, textAlign: 'center',
+                background: `${meta.color}08`, border: `1px solid ${meta.color}25`,
+                transition: 'border-color 0.2s',
+                ...(editingCosts ? { borderColor: `${meta.color}50` } : {}),
+              }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 10, margin: '0 auto 10px',
+                  background: `${meta.color}15`, color: meta.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Icon size={18} />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>{meta.label}</div>
+                {editingCosts ? (
+                  <input
+                    type="number"
+                    min="0"
+                    value={cost}
+                    onChange={e => setDraftCosts(prev => ({ ...prev, [ps.platform]: e.target.value }))}
+                    style={{
+                      width: 70, padding: '6px 8px', borderRadius: 8, fontSize: 18,
+                      fontWeight: 900, textAlign: 'center',
+                      background: 'var(--surface)', border: `2px solid ${meta.color}`,
+                      color: meta.color, outline: 'none', fontFamily: 'inherit',
+                    }}
+                  />
+                ) : (
+                  <div style={{ fontSize: 26, fontWeight: 900, color: meta.color }}>
+                    {ps.token_cost === 0 ? t('Free', 'مجاني') : ps.token_cost}
+                  </div>
+                )}
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {ps.token_cost === 0 && !editingCosts ? '' : t('tokens / msg', 'توكن / رسالة')}
+                </div>
               </div>
-              <div style={{ fontWeight: 700, fontSize: 13 }}>{label}</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color, marginTop: 4 }}>{cost}</div>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>توكن / رسالة</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* ── Clients by Plan ── */}
+      {/* ── Client Distribution ── */}
       <div style={{
         background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 20, overflow: 'hidden'
+        borderRadius: 20, overflow: 'hidden',
       }}>
         <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontWeight: 900, fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <TrendingUp size={18} style={{ color: 'var(--primary)' }} /> توزيع العملاء
+            <TrendingUp size={18} style={{ color: 'var(--primary)' }} />
+            {t('Client Distribution', 'توزيع العملاء')}
           </h2>
         </div>
         <div style={{ padding: 24, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           {[
-            { label: 'نشط', color: '#10B981', count: activeClients },
-            { label: 'الوكلاء النشطين', color: '#8B5CF6', count: activeAgents },
-            { label: 'غير نشط', color: '#EF4444', count: clients.length - activeClients },
+            { label: t('Active', 'نشط'),                          color: '#10B981', count: activeClients },
+            { label: t('Active Agents', 'الوكلاء النشطين'),       color: '#8B5CF6', count: activeAgents },
+            { label: t('Inactive', 'غير نشط'),                    color: '#EF4444', count: clients.length - activeClients },
           ].map(({ label, color, count }) => (
             <div key={label} style={{
               padding: '20px 24px', borderRadius: 14, textAlign: 'center',
-              background: `${color}08`, border: `1px solid ${color}20`
+              background: `${color}08`, border: `1px solid ${color}20`,
             }}>
               <div style={{ fontSize: 32, fontWeight: 900, color }}>{count}</div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>{label}</div>
