@@ -52,6 +52,37 @@ export const adminUpsertIntegration = async (userId, provider, config) => {
   return data;
 };
 
+// ─── Subscription Plans Management ───
+
+export const adminGetPlans = async () => {
+  const { data, error } = await supabase
+    .from('subscription_plans')
+    .select('*')
+    .order('sort_order');
+  if (error) throw error;
+  return data || [];
+};
+
+export const adminUpdatePlan = async (planId, updates) => {
+  const { data, error } = await supabase
+    .from('subscription_plans')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', planId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const adminTogglePlan = async (planId, isActive) => {
+  const { data, error } = await supabase
+    .from('subscription_plans')
+    .update({ is_active: isActive })
+    .eq('id', planId);
+  if (error) throw error;
+  return data;
+};
+
 // ─── Agent/Salon Profile Management ───
 
 export const adminGetClientAgent = async (userId) => {
