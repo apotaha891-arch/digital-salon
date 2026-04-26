@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X, Zap, Star, Crown, Building2 } from 'lucide-react';
+import { Check, Zap, Star, Crown, Building2, Loader2 } from 'lucide-react';
 
 const PLAN_ICONS = {
   starter: Star,
@@ -13,8 +13,8 @@ const PLAN_COLORS = {
   business: { primary: '#F59E0B', gradient: 'linear-gradient(135deg, #F59E0B, #EAB308)' },
 };
 
-export default function PricingCard({ 
-  plan, isAr, isCurrentPlan, isPopular, onSelect, disabled, comingSoon 
+export default function PricingCard({
+  plan, isAr, isCurrentPlan, isPopular, onSelect, disabled, comingSoon, loading
 }) {
   const Icon = PLAN_ICONS[plan.id] || Zap;
   const colors = PLAN_COLORS[plan.id] || PLAN_COLORS.starter;
@@ -151,28 +151,31 @@ export default function PricingCard({
 
       {/* CTA Button */}
       <button
-        onClick={() => !disabled && !comingSoon && onSelect?.(plan)}
-        disabled={disabled || isCurrentPlan || comingSoon}
+        onClick={() => !disabled && !comingSoon && !loading && onSelect?.(plan)}
+        disabled={disabled || isCurrentPlan || comingSoon || loading}
         style={{
           width: '100%', padding: '12px 20px', borderRadius: 14,
           border: 'none', fontFamily: 'inherit',
-          background: isCurrentPlan 
-            ? 'var(--surface2)' 
+          background: isCurrentPlan
+            ? 'var(--surface2)'
             : (comingSoon ? 'var(--surface2)' : colors.gradient),
           color: isCurrentPlan ? 'var(--text-muted)' : (comingSoon ? 'var(--text-muted)' : 'white'),
           fontSize: 14, fontWeight: 800,
-          cursor: isCurrentPlan || comingSoon ? 'default' : 'pointer',
+          cursor: isCurrentPlan || comingSoon || loading ? 'default' : 'pointer',
           transition: 'all 0.2s',
-          opacity: disabled ? 0.6 : 1
+          opacity: disabled || loading ? 0.7 : 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
         }}
       >
-        {isCurrentPlan 
-          ? (isAr ? '✓ خطتك الحالية' : '✓ Current Plan')
-          : comingSoon 
-            ? (isAr ? '🔜 قريباً' : '🔜 Coming Soon')
-            : plan.trial_days > 0 
-              ? (isAr ? 'ابدأ التجربة المجانية' : 'Start Free Trial')
-              : (isAr ? 'اشترك الآن' : 'Subscribe Now')
+        {loading
+          ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+          : isCurrentPlan
+            ? (isAr ? '✓ خطتك الحالية' : '✓ Current Plan')
+            : comingSoon
+              ? (isAr ? '🔜 قريباً' : '🔜 Coming Soon')
+              : plan.trial_days > 0
+                ? (isAr ? 'ابدأ التجربة المجانية' : 'Start Free Trial')
+                : (isAr ? 'اشترك الآن' : 'Subscribe Now')
         }
       </button>
     </div>

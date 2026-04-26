@@ -11,6 +11,7 @@ import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import PricingCard from '../components/billing/PricingCard';
 import { supabase } from '../services/supabase';
+import { createCheckoutSession } from '../services/wallet';
 
 // ─── Constants ───
 const PLATFORM_ICONS = {
@@ -54,6 +55,7 @@ export default function Billing() {
   const [subscription, setSubscription] = useState(null);
   const [topups, setTopups] = useState([]);
   const [plansLoading, setPlansLoading] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(null);
 
   // Load plans and subscription from DB
   useEffect(() => {
@@ -107,14 +109,37 @@ export default function Billing() {
   // Current plan top-ups
   const currentTopups = topups.filter(tp => tp.plan_id === currentPlanId);
 
-  const handleSelectPlan = (plan) => {
-    // TODO: Integrate with Stripe Checkout
-    alert(`🚀 ${isAr ? 'سيتم توجيهك إلى Stripe للاشتراك في' : 'Redirecting to Stripe for'} ${plan.name}`);
+  const handleSelectPlan = async (plan) => {
+    try {
+      setCheckoutLoading(plan.id);
+      const result = await createCheckoutSession('subscription', {
+        plan_id: plan.id,
+        user_id: user.id,
+        return_url: window.location.origin,
+      });
+      if (result.url) window.location.href = result.url;
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
-  const handleTopUp = (pkg) => {
-    // TODO: Integrate with Stripe Checkout for one-time payment
-    alert(`💳 ${isAr ? 'شحن' : 'Top-up'} ${pkg.tokens} ${isAr ? 'رسالة بـ' : 'tokens for'} $${pkg.price_usd}`);
+  const handleTopUp = async (pkg) => {
+    if (!pkg.id) return alert(isAr ? 'هذه الحزمة غير متاحة بعد' : 'This package is not available yet');
+    try {
+      setCheckoutLoading(pkg.id);
+      const result = await createCheckoutSession('topup', {
+        topup_id: pkg.id,
+        user_id: user.id,
+        return_url: window.location.origin,
+      });
+      if (result.url) window.location.href = result.url;
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
   if (loading) return <Spinner centered />;
@@ -283,6 +308,7 @@ export default function Billing() {
                   isPopular={plan.id === 'pro'}
                   comingSoon={plan.id === 'business'}
                   onSelect={handleSelectPlan}
+                  loading={checkoutLoading === plan.id}
                 />
               ))}
             </div>
