@@ -892,30 +892,94 @@ body.light-mode .ln-nav {
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
+  /* ── Navbar ── */
   .ln-nav-links { display: none; }
-  .ln-hero-inner { grid-template-columns: 1fr; gap: 36px; }
-  .ln-phone-wrap { order: -1; }
-  .ln-phone-frame { width: 220px; }
+  .ln-nav-inner { padding: 0 16px; gap: 6px; }
+  .ln-logo { font-size: 16px; }
+  .ln-icon-btn { width: 32px; height: 32px; }
+  .ln-nav-controls { gap: 6px; }
+
+  /* ── Hero ── */
+  .ln-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 36px 20px 28px;
+    text-align: center;
+  }
+  /* Text comes first, phone second */
+  .ln-phone-wrap { order: 1; }
+  .ln-hero-ctas { justify-content: center; }
+
+  /* Smaller phone mockup */
+  .ln-phone-frame { width: 200px; }
+  .ln-phone-glow { width: 180px; height: 180px; }
   .ln-badge-float { display: none; }
+
+  /* Shorter chat inside phone on mobile */
+  .ln-chat-wrap {
+    height: 300px;
+    min-height: 300px;
+    max-height: 300px;
+  }
+
+  /* Trust indicators center */
+  .ln-hero-inner > div:first-child > div:last-child {
+    justify-content: center;
+  }
+
+  /* ── Sections ── */
+  .ln-section { padding: 56px 0; }
+  .ln-container { padding: 0 16px; }
+
   .ln-steps-grid { grid-template-columns: 1fr; }
   .ln-steps-grid::before { display: none; }
+
   .ln-features-grid { grid-template-columns: 1fr 1fr; }
-  .ln-plans-grid { grid-template-columns: 1fr; }
+
+  .ln-plans-grid { grid-template-columns: 1fr; max-width: 400px; }
+
   .ln-testimonials-grid { grid-template-columns: 1fr; }
-  .ln-footer-inner { flex-direction: column; text-align: center; }
+
+  .ln-proof-inner { flex-direction: column; gap: 12px; }
+  .ln-proof-platforms { flex-wrap: wrap; justify-content: center; }
+
+  .ln-footer-inner { flex-direction: column; text-align: center; gap: 16px; }
   .ln-footer-links { justify-content: center; }
-  .ln-proof-inner { flex-direction: column; gap: 16px; }
-  .ln-section { padding: 60px 0; }
+
+  /* ── Billing toggle ── */
+  .ln-billing-toggle { flex-direction: column; gap: 8px; }
+
+  /* ── Section titles ── */
+  .ln-section-title { font-size: clamp(22px, 6vw, 32px); }
 }
 
 @media (max-width: 480px) {
   .ln-features-grid { grid-template-columns: 1fr; }
+
   .ln-hero-ctas { flex-direction: column; align-items: stretch; }
-  .ln-btn-primary, .ln-btn-outline { text-align: center; }
+  .ln-btn-primary, .ln-btn-outline { text-align: center; justify-content: center; }
+
   .ln-final-ctas { flex-direction: column; align-items: center; }
+
+  /* Even smaller phone on small screens */
+  .ln-phone-frame { width: 170px; }
+  .ln-chat-wrap {
+    height: 260px;
+    min-height: 260px;
+    max-height: 260px;
+  }
+  .ln-chat-msg { font-size: 12px; }
+
+  .ln-plan-card { padding: 24px 20px; }
+  .ln-price-amount { font-size: 42px; }
+
+  /* Testimonials: tighter */
+  .ln-testimonial-card { padding: 20px; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
+  .ln-hero-inner { gap: 40px; }
   .ln-features-grid { grid-template-columns: repeat(2, 1fr); }
   .ln-testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+  .ln-plans-grid { grid-template-columns: repeat(2, 1fr); max-width: 680px; }
 }
