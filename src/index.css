@@ -21,12 +21,12 @@
 }
 
 body.light-mode {
-  --bg: #FDFBF7; /* Soft Cream */
+  --bg: #F0EBF8;
   --surface: #FFFFFF;
-  --surface2: #F5F1E9;
-  --border: rgba(217, 70, 239, 0.15);
+  --surface2: #E8DEFA;
+  --border: rgba(147, 51, 234, 0.22);
   --text: #1A0F2E;
-  --text-muted: rgba(26, 15, 46, 0.5);
+  --text-muted: rgba(26, 15, 46, 0.6);
   --accent: #D946EF;
 }
 
@@ -74,7 +74,63 @@ body {
 }
 
 body.light-mode .floating-settings {
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(147, 51, 234, 0.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* ── LIGHT MODE: component overrides ── */
+body.light-mode .card-glass {
+  background: #FFFFFF;
+  box-shadow: 0 8px 32px rgba(100, 50, 180, 0.1);
+}
+
+body.light-mode .glass-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(147, 51, 234, 0.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+body.light-mode .neon-input {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+body.light-mode .auth-page {
+  background: radial-gradient(ellipse at 50% 0%, rgba(147,51,234,0.08) 0%, transparent 70%), var(--bg);
+}
+
+body.light-mode .modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+body.light-mode .modal-content {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+body.light-mode thead {
+  background: #EDE8F5;
+}
+
+body.light-mode tr:hover td {
+  background: rgba(147,51,234,0.05);
+}
+
+body.light-mode .nav-item:hover {
+  background: var(--surface2);
+}
+
+body.light-mode .stat-card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+body.light-mode .integration-item {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+body.light-mode .sidebar {
+  box-shadow: 2px 0 16px rgba(0,0,0,0.06);
 }
 
 [dir="rtl"] .floating-settings {

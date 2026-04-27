@@ -60,7 +60,8 @@ export default function Login() {
               style={{
                 flex: 1, padding: '10px', border: 'none', borderRadius: 8,
                 background: (isSignup ? i === 1 : i === 0) ? 'var(--primary)' : 'transparent',
-                color: 'white', fontFamily: ' Tajawal, sans-serif', fontWeight: 600, cursor: 'pointer',
+                color: (isSignup ? i === 1 : i === 0) ? 'white' : 'var(--text-muted)',
+                fontFamily: 'Tajawal, sans-serif', fontWeight: 600, cursor: 'pointer',
                 transition: 'all 0.2s'
               }}
             >{label}</button>
