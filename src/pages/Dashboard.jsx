@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -7,11 +7,13 @@ import { useBusiness } from '../hooks/useBusiness';
 import { useWallet } from '../hooks/useWallet';
 import { useIntegrations } from '../hooks/useIntegrations';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { Plug, CreditCard, Settings, MessageSquare, Wifi, WifiOff, AlertTriangle } from 'lucide-react';
+import { Plug, CreditCard, Settings, MessageSquare, Wifi, WifiOff, AlertTriangle, Zap, X } from 'lucide-react';
 
 import StatCard from '../components/ui/StatCard';
 import Spinner from '../components/ui/Spinner';
 import Badge from '../components/ui/Badge';
+import PlansModal from '../components/billing/PlansModal';
+import { useSubscription } from '../hooks/useSubscription';
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
@@ -24,6 +26,9 @@ export default function Dashboard() {
   const { wallet, loading: wLoading } = useWallet(user?.id);
   const { integrations, loading: iLoading } = useIntegrations(user?.id);
   const { stats, loading: sLoading } = useDashboardStats(user?.id);
+  const { subscription, plans } = useSubscription(user?.id);
+  const [showPlans, setShowPlans] = useState(false);
+  const [hideBanner, setHideBanner] = useState(false);
 
   const loading = aLoading || bLoading || wLoading || iLoading || sLoading;
 
@@ -62,6 +67,68 @@ export default function Dashboard() {
 
   return (
     <div>
+      {/* Plans Modal */}
+      <PlansModal
+        isOpen={showPlans}
+        onClose={() => setShowPlans(false)}
+        userId={user?.id}
+        isAr={isAr}
+        plans={plans}
+      />
+
+      {/* ── No Subscription Banner ── */}
+      {!subscription && !hideBanner && (
+        <div style={{
+          marginBottom: 20,
+          background: 'linear-gradient(135deg, rgba(217,70,239,0.12), rgba(147,51,234,0.08))',
+          border: '1px solid rgba(217,70,239,0.3)',
+          borderRadius: 16, padding: '14px 20px',
+          display: 'flex', alignItems: 'center', gap: 14,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+            background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Zap size={20} color="white" />
+          </div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>
+              {isAr ? '🎁 أنت على التجربة المجانية — 100 رسالة فقط' : '🎁 You\'re on the free trial — 100 tokens only'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+              {isAr
+                ? 'فعّل باقتك الآن للحصول على المزيد من الرسائل وجميع المميزات'
+                : 'Activate your plan now for more tokens and full features'}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+            <button
+              onClick={() => setShowPlans(true)}
+              style={{
+                background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                color: 'white', border: 'none', borderRadius: 10,
+                padding: '9px 20px', fontSize: 13, fontWeight: 800,
+                cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+              }}
+            >
+              {isAr ? '⚡ فعّل الموظفة' : '⚡ Activate Agent'}
+            </button>
+            <button
+              onClick={() => setHideBanner(true)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--text-muted)', padding: 4,
+              }}
+              title={isAr ? 'إخفاء' : 'Dismiss'}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Welcome Header */}
       <div className="page-header">
         <div>
@@ -90,8 +157,14 @@ export default function Dashboard() {
               {isAr ? 'ستتوقف الموظفة عن الرد عند نفاد الرصيد' : 'Agent will stop responding when balance reaches zero'}
             </div>
           </div>
-          <button className="btn btn-secondary" style={{ fontSize: 13, flexShrink: 0 }} onClick={() => navigate('/billing')}>
-            {isAr ? 'شحن الآن' : 'Recharge'}
+          <button
+            className="btn btn-secondary"
+            style={{ fontSize: 13, flexShrink: 0 }}
+            onClick={() => subscription ? navigate('/billing') : setShowPlans(true)}
+          >
+            {isAr
+              ? (subscription ? 'شحن الآن' : '⚡ فعّل الموظفة')
+              : (subscription ? 'Recharge' : '⚡ Activate Agent')}
           </button>
         </div>
       )}
