@@ -6,6 +6,7 @@ export interface ChatMessage {
 
 export interface GeminiPart {
   text?: string
+  thought?: boolean   // Gemini 2.5 thinking mode — must be filtered out before showing to users
   functionCall?: {
     name: string
     args: Record<string, unknown>

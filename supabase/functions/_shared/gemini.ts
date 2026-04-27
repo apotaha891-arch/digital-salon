@@ -54,7 +54,8 @@ export const callGemini = async (
       }
 
       const reply = data.candidates?.[0]?.content?.parts
-        ?.map((p: GeminiPart) => p.text ?? '')
+        ?.filter((p: GeminiPart) => !p.thought)   // strip Gemini 2.5 thinking blocks
+        .map((p: GeminiPart) => p.text ?? '')
         .join('\n')
         .trim()
 
