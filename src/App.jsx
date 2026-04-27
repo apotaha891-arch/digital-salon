@@ -18,6 +18,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 import AdminLeads from './pages/admin/AdminLeads';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
+import ResetPassword from './pages/ResetPassword';
 import SalonConcierge from './components/SalonConcierge';
 import './index.css';
 
@@ -45,6 +46,7 @@ const AppRoutes = () => {
     <SalonConcierge lang={i18n.language} />
     <Routes>
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Client Routes */}
       <Route path="/setup" element={<ProtectedRoute><Layout><Setup /></Layout></ProtectedRoute>} />
@@ -62,7 +64,7 @@ const AppRoutes = () => {
       <Route path="/admin/settings" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminSettings /></Layout></ProtectedRoute>} />
       <Route path="/admin/leads" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminLeads /></Layout></ProtectedRoute>} />
 
-      <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Landing />} />
+      <Route path="/" element={<Landing />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
     </>
