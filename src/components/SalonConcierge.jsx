@@ -47,6 +47,13 @@ export default function SalonConcierge({ lang = 'ar' }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Any component can dispatch window.dispatchEvent(new CustomEvent('openConcierge'))
+  useEffect(() => {
+    const handler = () => { setOpen(true); setShowTooltip(false); };
+    window.addEventListener('openConcierge', handler);
+    return () => window.removeEventListener('openConcierge', handler);
+  }, []);
+
   useEffect(() => {
     if (bodyRef.current)
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;

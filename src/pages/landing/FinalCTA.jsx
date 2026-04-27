@@ -24,15 +24,13 @@ export default function FinalCTA() {
           >
             {t('landing.final_cta.cta1')}
           </button>
-          <a
-            href="https://wa.me/966500000000"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
             className="ln-btn-outline"
-            style={{ fontSize: 16, padding: '14px 32px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            style={{ fontSize: 16, padding: '14px 32px' }}
+            onClick={() => window.dispatchEvent(new CustomEvent('openConcierge'))}
           >
             {t('landing.final_cta.cta2')}
-          </a>
+          </button>
         </div>
       </div>
     </section>

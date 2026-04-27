@@ -232,7 +232,7 @@ export default function Dashboard() {
           <button
             className="btn btn-secondary"
             style={{ marginRight: 'auto' }}
-            onClick={() => window.open('https://wa.me/966XXXXXXXXX')}
+            onClick={() => window.dispatchEvent(new CustomEvent('openConcierge'))}
           >
             {t('dashboard.support.btn')}
           </button>

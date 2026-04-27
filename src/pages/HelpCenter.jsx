@@ -192,22 +192,21 @@ export default function HelpCenter() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.6 }}>
               {t('help.contact.sub')}
             </p>
-            <a 
-              href="https://wa.me/YOUR_SUPPORT_NUMBER" 
-              target="_blank" 
-              rel="noreferrer"
-              style={{ 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                gap: 10, background: 'white', color: 'var(--primary)', 
-                padding: '14px', borderRadius: 14, fontWeight: 900, fontSize: 15,
-                textDecoration: 'none', transition: 'transform 0.2s',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('openConcierge'))}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 10, background: 'var(--primary)', color: 'white',
+                padding: '14px 24px', borderRadius: 14, fontWeight: 900, fontSize: 15,
+                border: 'none', cursor: 'pointer', transition: 'transform 0.2s',
+                boxShadow: '0 4px 12px rgba(217,70,239,0.3)',
+                fontFamily: 'Tajawal, sans-serif', width: '100%', justifyContent: 'center',
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <MessageCircle size={20} /> {t('help.contact.btn')}
-            </a>
+            </button>
           </div>
         </div>
       </div>
