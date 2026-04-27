@@ -2,6 +2,7 @@
 import { serve } from 'std/http/server'
 import { corsHeaders, handleCors } from '../_shared/cors.ts'
 import { callGemini } from '../_shared/gemini.ts'
+import { getServiceClient } from '../_shared/supabase.ts'
 import type { ChatMessage } from '../_shared/types.ts'
 
 const CONCIERGE_PROMPT = `أنت "لين" — المساعدة الذكية لمنصة Digital Salon، منصة سحابية تساعد أصحاب الصالونات على إدارة أعمالهم بالذكاء الاصطناعي.
@@ -26,10 +27,53 @@ serve(async (req: Request) => {
   if (corsResponse) return corsResponse
 
   try {
-    const { message, history = [] }: { message: string; history: ChatMessage[] } = await req.json()
+    const {
+      message,
+      history = [],
+      session_id,
+      visitor_name,
+      visitor_email,
+      visitor_phone,
+      language = 'ar',
+    }: {
+      message: string
+      history: ChatMessage[]
+      session_id?: string
+      visitor_name?: string
+      visitor_email?: string
+      visitor_phone?: string
+      language?: string
+    } = await req.json()
+
     if (!message?.trim()) throw new Error('message is required')
 
     const reply = await callGemini(CONCIERGE_PROMPT, history, message)
+
+    // Save conversation to DB (fire-and-forget, don't block the reply)
+    if (session_id) {
+      const db = getServiceClient()
+      const updatedMessages = [
+        ...history.map((m: ChatMessage) => ({ role: m.role, text: m.text ?? m.content })),
+        { role: 'user', text: message },
+        { role: 'bot',  text: reply },
+      ]
+
+      const upsertData: Record<string, unknown> = {
+        session_id,
+        messages: updatedMessages,
+        language,
+        updated_at: new Date().toISOString(),
+      }
+      if (visitor_name)  upsertData.visitor_name  = visitor_name
+      if (visitor_email) upsertData.visitor_email = visitor_email
+      if (visitor_phone) upsertData.visitor_phone = visitor_phone
+
+      db.from('concierge_leads')
+        .upsert(upsertData, { onConflict: 'session_id' })
+        .then(({ error }) => {
+          if (error) console.error('[CONCIERGE] DB save error:', error.message)
+        })
+    }
 
     return new Response(JSON.stringify({ reply }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

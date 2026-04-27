@@ -15,7 +15,8 @@ import {
   Moon,
   Languages,
   Plug,
-  Store
+  Store,
+  MessagesSquare
 } from 'lucide-react';
 import { signOut } from '../../services/supabase';
 import { SECTOR } from '../../config/sector';
@@ -38,6 +39,7 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
   const adminNav = [
     { to: '/admin',          icon: LayoutDashboard, label: t('admin.dashboard.title') },
     { to: '/admin/clients',  icon: Users,            label: t('admin.clients.title') },
+    { to: '/admin/leads',    icon: MessagesSquare,   label: t('admin.leads.title') },
     { to: '/admin/settings', icon: Settings,         label: t('common.setup') },
   ];
 

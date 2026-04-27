@@ -105,6 +105,25 @@ export const adminUpdatePlatformSetting = async (platform, tokenCost) => {
   return data;
 };
 
+// ─── Concierge Leads ───
+
+export const adminGetLeads = async () => {
+  const { data, error } = await supabase
+    .from('concierge_leads')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+};
+
+export const adminMarkLeadResolved = async (id, resolved) => {
+  const { error } = await supabase
+    .from('concierge_leads')
+    .update({ is_resolved: resolved })
+    .eq('id', id);
+  if (error) throw error;
+};
+
 // ─── Agent/Salon Profile Management ───
 
 export const adminGetClientAgent = async (userId) => {

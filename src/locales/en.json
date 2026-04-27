@@ -262,6 +262,9 @@
     }
   },
   "admin": {
+    "leads": {
+      "title": "Website Leads"
+    },
     "dashboard": {
       "title": "Admin Dashboard 🛡️",
       "subtitle": "Overview of all platform clients",

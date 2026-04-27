@@ -15,6 +15,7 @@ import HelpCenter from './pages/HelpCenter';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminLeads from './pages/admin/AdminLeads';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import SalonConcierge from './components/SalonConcierge';
@@ -59,6 +60,7 @@ const AppRoutes = () => {
       <Route path="/admin" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminDashboard /></Layout></ProtectedRoute>} />
       <Route path="/admin/clients" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminClients /></Layout></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminSettings /></Layout></ProtectedRoute>} />
+      <Route path="/admin/leads" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminLeads /></Layout></ProtectedRoute>} />
 
       <Route path="/" element={user ? <Navigate to="/dashboard" /> : <Landing />} />
       <Route path="*" element={<Navigate to="/" />} />

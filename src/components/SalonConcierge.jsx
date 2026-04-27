@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 const WIDGET_CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/concierge`;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-
 const QUICK_AR = [
   'كيف يعمل الحجز التلقائي؟',
   'ما القنوات المدعومة؟',
@@ -22,36 +21,50 @@ const QUICK_EN = [
   'What happens when balance runs out?',
 ];
 
+function genSessionId() {
+  return 'cs_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
 export default function SalonConcierge({ lang = 'ar' }) {
   const isAr = lang === 'ar' || lang?.startsWith('ar');
 
-  const [open, setOpen]           = useState(false);
-  const [messages, setMessages]   = useState([]);
-  const [input, setInput]         = useState('');
-  const [loading, setLoading]     = useState(false);
+  const [open, setOpen]               = useState(false);
+  const [messages, setMessages]       = useState([]);
+  const [input, setInput]             = useState('');
+  const [loading, setLoading]         = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contactForm, setContactForm] = useState({ name: '', contact: '' });
 
-  const bodyRef  = useRef(null);
-  const inputRef = useRef(null);
+  const sessionIdRef = useRef(genSessionId());
+  const visitorRef   = useRef({ name: '', email: '', phone: '' });
+  const bodyRef      = useRef(null);
+  const inputRef     = useRef(null);
 
-  // Tooltip after 8 s
   useEffect(() => {
     const t = setTimeout(() => setShowTooltip(true), 8000);
     return () => clearTimeout(t);
   }, []);
 
-  // Scroll body to bottom on new messages
   useEffect(() => {
     if (bodyRef.current)
       bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [messages, loading]);
+  }, [messages, loading, showContactForm]);
 
-  // Focus input when window opens
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 120);
   }, [open]);
 
-  const sendMessage = async (text) => {
+  // Show contact form after 4 user messages
+  useEffect(() => {
+    const userCount = messages.filter(m => m.role === 'user').length;
+    if (userCount >= 4 && !contactSent && !showContactForm) {
+      setShowContactForm(true);
+    }
+  }, [messages]);
+
+  const sendMessage = async (text, extraPayload = {}) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
 
@@ -67,18 +80,25 @@ export default function SalonConcierge({ lang = 'ar' }) {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ message: trimmed, history: messages }),
+        body: JSON.stringify({
+          message: trimmed,
+          history: messages,
+          session_id: sessionIdRef.current,
+          language: isAr ? 'ar' : 'en',
+          visitor_name:  visitorRef.current.name  || undefined,
+          visitor_email: visitorRef.current.email || undefined,
+          visitor_phone: visitorRef.current.phone || undefined,
+          ...extraPayload,
+        }),
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       const data  = await res.json();
       if (data.error) throw new Error(data.error);
-      const reply = data.reply?.trim();
 
       setMessages(prev => [...prev, {
         role: 'bot',
-        text: reply || (isAr ? 'عذراً، لم أفهم. حاولي مرة أخرى.' : 'Sorry, I did not understand. Please try again.'),
+        text: data.reply?.trim() || (isAr ? 'عذراً، لم أفهم. حاولي مرة أخرى.' : 'Sorry, I did not understand. Please try again.'),
       }]);
     } catch {
       setMessages(prev => [...prev, {
@@ -92,15 +112,54 @@ export default function SalonConcierge({ lang = 'ar' }) {
     }
   };
 
+  const submitContact = async () => {
+    const { name, contact } = contactForm;
+    if (!name.trim() && !contact.trim()) return;
+
+    const isEmail = contact.includes('@');
+    visitorRef.current = {
+      name: name.trim(),
+      email: isEmail ? contact.trim() : '',
+      phone: !isEmail ? contact.trim() : '',
+    };
+
+    setShowContactForm(false);
+    setContactSent(true);
+
+    const confirmMsg = isAr
+      ? `شكراً ${name || ''}! 🌸 تم حفظ معلوماتك وسيتواصل معك فريقنا قريباً.`
+      : `Thank you ${name || ''}! 🌸 Your info has been saved and our team will reach out soon.`;
+
+    setMessages(prev => [...prev, { role: 'bot', text: confirmMsg }]);
+
+    // Send a silent "contact captured" message to persist visitor info
+    await fetch(WIDGET_CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        message: `[CONTACT] name=${name} contact=${contact}`,
+        history: messages,
+        session_id: sessionIdRef.current,
+        language: isAr ? 'ar' : 'en',
+        visitor_name:  name.trim() || undefined,
+        visitor_email: isEmail ? contact.trim() : undefined,
+        visitor_phone: !isEmail ? contact.trim() : undefined,
+      }),
+    }).catch(() => {});
+  };
+
   const side = isAr ? 'left' : 'right';
 
   return (
     <>
-      {/* ── Chat Window ── */}
       {open && (
         <div style={{
           position: 'fixed', bottom: 90, [side]: 24,
-          width: 340, height: 500,
+          width: 340, maxHeight: 540,
           background: 'var(--surface)',
           border: '1px solid var(--border)',
           borderRadius: 20,
@@ -134,11 +193,7 @@ export default function SalonConcierge({ lang = 'ar' }) {
             </div>
             <button
               onClick={() => setOpen(false)}
-              style={{
-                background: 'none', border: 'none', color: 'white',
-                cursor: 'pointer', fontSize: 22, lineHeight: 1,
-                opacity: 0.8, padding: 4, flexShrink: 0,
-              }}
+              style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: 22, lineHeight: 1, opacity: 0.8, padding: 4, flexShrink: 0 }}
               aria-label="Close"
             >×</button>
           </div>
@@ -150,9 +205,7 @@ export default function SalonConcierge({ lang = 'ar' }) {
             display: 'flex', flexDirection: 'column', gap: 8,
             scrollbarWidth: 'none',
           }}>
-
-            {/* Welcome bubble */}
-            <Bubble isBot side={isAr ? 'start' : 'start'}>
+            <Bubble isBot>
               {isAr
                 ? 'أهلاً! 👋 أنا لين، مساعدتك الذكية في Digital Salon\nكيف يمكنني مساعدتك اليوم؟'
                 : "Hello! 👋 I'm Lina, your Digital Salon AI assistant\nHow can I help you today?"}
@@ -163,15 +216,67 @@ export default function SalonConcierge({ lang = 'ar' }) {
             ))}
 
             {loading && <TypingDots />}
+
+            {/* Contact capture form — shown after 4 messages */}
+            {showContactForm && (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(217,70,239,0.08), rgba(147,51,234,0.08))',
+                border: '1px solid var(--border)',
+                borderRadius: 14, padding: '12px 14px',
+                display: 'flex', flexDirection: 'column', gap: 8,
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)' }}>
+                  {isAr ? '💬 هل تريد أن يتواصل معك فريقنا؟' : '💬 Want our team to reach out?'}
+                </div>
+                <input
+                  placeholder={isAr ? 'اسمك...' : 'Your name...'}
+                  value={contactForm.name}
+                  onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))}
+                  style={{
+                    background: 'var(--surface2)', border: '1px solid var(--border)',
+                    borderRadius: 10, padding: '7px 12px', fontSize: 13,
+                    color: 'var(--text)', outline: 'none', direction: 'auto',
+                  }}
+                />
+                <input
+                  placeholder={isAr ? 'بريدك أو رقم واتساب...' : 'Email or WhatsApp number...'}
+                  value={contactForm.contact}
+                  onChange={e => setContactForm(f => ({ ...f, contact: e.target.value }))}
+                  style={{
+                    background: 'var(--surface2)', border: '1px solid var(--border)',
+                    borderRadius: 10, padding: '7px 12px', fontSize: 13,
+                    color: 'var(--text)', outline: 'none', direction: 'auto',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={submitContact}
+                    style={{
+                      flex: 1, padding: '7px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                      background: 'linear-gradient(135deg, #D946EF, #9333EA)',
+                      color: 'white', fontSize: 12, fontWeight: 700,
+                    }}
+                  >
+                    {isAr ? 'إرسال ✓' : 'Send ✓'}
+                  </button>
+                  <button
+                    onClick={() => setShowContactForm(false)}
+                    style={{
+                      padding: '7px 12px', borderRadius: 10, border: '1px solid var(--border)',
+                      background: 'var(--surface2)', color: 'var(--text-muted)',
+                      fontSize: 12, cursor: 'pointer',
+                    }}
+                  >
+                    {isAr ? 'لاحقاً' : 'Later'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Quick Questions — visible only before first message */}
+          {/* Quick Questions */}
           {messages.length === 0 && (
-            <div style={{
-              padding: '0 12px 8px',
-              display: 'flex', flexWrap: 'wrap', gap: 6,
-              flexShrink: 0,
-            }}>
+            <div style={{ padding: '0 12px 8px', display: 'flex', flexWrap: 'wrap', gap: 6, flexShrink: 0 }}>
               {(isAr ? QUICK_AR : QUICK_EN).map((q, i) => (
                 <QuickBtn key={i} onClick={() => sendMessage(q)}>{q}</QuickBtn>
               ))}
@@ -205,14 +310,11 @@ export default function SalonConcierge({ lang = 'ar' }) {
               disabled={!input.trim() || loading}
               style={{
                 width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                background: input.trim() && !loading
-                  ? 'linear-gradient(135deg, #D946EF, #9333EA)'
-                  : 'var(--surface2)',
+                background: input.trim() && !loading ? 'linear-gradient(135deg, #D946EF, #9333EA)' : 'var(--surface2)',
                 border: '1px solid var(--border)',
                 color: input.trim() && !loading ? 'white' : 'var(--text-muted)',
                 cursor: input.trim() && !loading ? 'pointer' : 'default',
-                fontSize: 16, display: 'flex',
-                alignItems: 'center', justifyContent: 'center',
+                fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.2s',
               }}
               aria-label="Send"
@@ -223,36 +325,33 @@ export default function SalonConcierge({ lang = 'ar' }) {
         </div>
       )}
 
-      {/* ── Tooltip ── */}
+      {/* Tooltip */}
       {showTooltip && !open && (
-        <div style={{
-          position: 'fixed', bottom: 90, [side]: 24,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 12, padding: '8px 14px',
-          fontSize: 13, color: 'var(--text)',
-          zIndex: 9998, whiteSpace: 'nowrap',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-          direction: isAr ? 'rtl' : 'ltr',
-          animation: 'sc-fade-in 0.3s ease',
-          cursor: 'pointer',
-        }}
+        <div
           onClick={() => { setOpen(true); setShowTooltip(false); }}
+          style={{
+            position: 'fixed', bottom: 90, [side]: 24,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 12, padding: '8px 14px',
+            fontSize: 13, color: 'var(--text)',
+            zIndex: 9998, whiteSpace: 'nowrap',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+            direction: isAr ? 'rtl' : 'ltr',
+            animation: 'sc-fade-in 0.3s ease', cursor: 'pointer',
+          }}
         >
           {isAr ? '👋 هل تحتاجين مساعدة؟' : '👋 Need help?'}
           <span style={{
             position: 'absolute', bottom: -7, [side]: 20,
-            width: 13, height: 13,
-            background: 'var(--surface)',
+            width: 13, height: 13, background: 'var(--surface)',
             borderBottom: '1px solid var(--border)',
             [isAr ? 'borderLeft' : 'borderRight']: '1px solid var(--border)',
-            transform: 'rotate(-45deg)',
-            display: 'block',
+            transform: 'rotate(-45deg)', display: 'block',
           }} />
         </div>
       )}
 
-      {/* ── FAB Button ── */}
+      {/* FAB */}
       <button
         onClick={() => { setOpen(o => !o); setShowTooltip(false); }}
         style={{
@@ -273,7 +372,6 @@ export default function SalonConcierge({ lang = 'ar' }) {
         {open ? '×' : '💬'}
       </button>
 
-      {/* Keyframes */}
       <style>{`
         @keyframes sc-slide-up {
           from { opacity: 0; transform: translateY(16px) scale(0.97); }
@@ -292,21 +390,14 @@ export default function SalonConcierge({ lang = 'ar' }) {
   );
 }
 
-/* ── Sub-components ── */
-
 function Bubble({ isBot, children }) {
   return (
     <div style={{
-      maxWidth: '85%',
-      padding: '10px 13px',
-      borderRadius: 14,
-      fontSize: 13, lineHeight: 1.65,
-      whiteSpace: 'pre-wrap',
+      maxWidth: '85%', padding: '10px 13px', borderRadius: 14,
+      fontSize: 13, lineHeight: 1.65, whiteSpace: 'pre-wrap',
       direction: 'auto', unicodeBidi: 'plaintext',
       alignSelf: isBot ? 'flex-start' : 'flex-end',
-      background: isBot
-        ? 'var(--surface2)'
-        : 'linear-gradient(135deg, #D946EF, #9333EA)',
+      background: isBot ? 'var(--surface2)' : 'linear-gradient(135deg, #D946EF, #9333EA)',
       color: isBot ? 'var(--text)' : 'white',
       border: isBot ? '1px solid var(--border)' : 'none',
       borderBottomLeftRadius: isBot ? 4 : 14,
@@ -322,11 +413,9 @@ function QuickBtn({ onClick, children }) {
     <button
       onClick={onClick}
       style={{
-        background: 'var(--surface2)',
-        border: '1px solid var(--border)',
-        borderRadius: 20, padding: '5px 10px',
-        fontSize: 11, color: 'var(--text)',
-        cursor: 'pointer', lineHeight: 1.45,
+        background: 'var(--surface2)', border: '1px solid var(--border)',
+        borderRadius: 20, padding: '5px 10px', fontSize: 11,
+        color: 'var(--text)', cursor: 'pointer', lineHeight: 1.45,
         transition: 'border-color 0.15s',
       }}
       onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
@@ -340,17 +429,14 @@ function QuickBtn({ onClick, children }) {
 function TypingDots() {
   return (
     <div style={{
-      alignSelf: 'flex-start',
-      background: 'var(--surface2)',
-      border: '1px solid var(--border)',
-      borderRadius: 14, borderBottomLeftRadius: 4,
-      padding: '10px 16px',
+      alignSelf: 'flex-start', background: 'var(--surface2)',
+      border: '1px solid var(--border)', borderRadius: 14,
+      borderBottomLeftRadius: 4, padding: '10px 16px',
       display: 'flex', gap: 5, alignItems: 'center',
     }}>
       {[0, 1, 2].map(i => (
         <div key={i} style={{
-          width: 7, height: 7, borderRadius: '50%',
-          background: 'var(--primary)',
+          width: 7, height: 7, borderRadius: '50%', background: 'var(--primary)',
           animation: `sc-dot 1.2s ${i * 0.2}s ease-in-out infinite`,
         }} />
       ))}
