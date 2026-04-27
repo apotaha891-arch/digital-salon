@@ -111,9 +111,6 @@ DROP POLICY IF EXISTS "Users view own ledger" ON public.wallet_ledger;
 CREATE POLICY "Users view own ledger" ON public.wallet_ledger
   FOR SELECT USING (auth.uid() = user_id);
 
-  FOR SELECT USING (auth.uid() = user_id);
-
-
 -- ============================================
 -- 5. CUSTOMERS (CRM - 24shift)
 -- ============================================
@@ -491,7 +488,7 @@ END;$$;
 GRANT EXECUTE ON FUNCTION public.admin_get_all_clients()                              TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_add_credits(UUID, INT, TEXT)                   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_agent_full_context(UUID)                         TO authenticated;
-GRANT EXECUTE ON FUNCTION public.create_booking(UUID, TEXT, TEXT, TEXT, DATE, TIME, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_booking(UUID, TEXT, TEXT, TEXT, DATE, TIME, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_conversation_history(UUID, TEXT, TEXT, INT)      TO authenticated;
 GRANT EXECUTE ON FUNCTION public.check_availability(UUID, DATE, TIME)                 TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_day_bookings(UUID, DATE)                        TO authenticated;
