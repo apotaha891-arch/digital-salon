@@ -19,6 +19,7 @@ import AdminLeads from './pages/admin/AdminLeads';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import ResetPassword from './pages/ResetPassword';
+import Contact from './pages/Contact';
 import SalonConcierge from './components/SalonConcierge';
 import './index.css';
 
@@ -65,6 +66,7 @@ const AppRoutes = () => {
       <Route path="/admin/leads" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminLeads /></Layout></ProtectedRoute>} />
 
       <Route path="/" element={<Landing />} />
+      <Route path="/contact" element={<Contact />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
     </>

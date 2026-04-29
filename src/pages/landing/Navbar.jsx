@@ -33,6 +33,9 @@ export default function Navbar() {
               {l.label}
             </button>
           ))}
+          <button className="ln-nav-link" onClick={() => navigate('/contact')}>
+            {i18n.language === 'ar' ? 'تواصل معنا' : 'Contact'}
+          </button>
         </div>
 
         <div className="ln-nav-controls">
