@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next';
 import {
   Settings, Users, Zap, CreditCard, TrendingUp, Edit3, Save, X,
   ToggleLeft, ToggleRight, Package, MessageCircle, Send, Globe,
-  CheckCircle, Loader2, RefreshCw, Crown, Star, Building2
+  CheckCircle, Loader2, RefreshCw, Crown, Star, Building2, Plus, Trash2
 } from 'lucide-react';
 import {
   adminGetPlans, adminUpdatePlan, adminTogglePlan, adminGetAllClients,
   adminGetPlatformSettings, adminUpdatePlatformSetting,
+  adminGetTopups, adminSaveTopup, adminDeleteTopup,
 } from '../../services/admin';
 import Spinner from '../../components/ui/Spinner';
 
@@ -61,6 +62,10 @@ export default function AdminSettings() {
   const [draftPlan, setDraftPlan]     = useState({});
   const [savingPlan, setSavingPlan]   = useState(null);
 
+  const [topups, setTopups]           = useState([]);
+  const [savingTopup, setSavingTopup] = useState(null);
+  const [newTopup, setNewTopup]       = useState({ tokens: '', price_usd: '', is_popular: false });
+
   // Platform cost editing
   const [editingCosts, setEditingCosts] = useState(false);
   const [draftCosts, setDraftCosts]     = useState({});
@@ -72,14 +77,16 @@ export default function AdminSettings() {
   const load = async () => {
     setLoading(true);
     try {
-      const [p, c, ps] = await Promise.all([
+      const [p, c, ps, tp] = await Promise.all([
         adminGetPlans(),
         adminGetAllClients(),
         adminGetPlatformSettings(),
+        adminGetTopups(),
       ]);
       setPlans(p);
       setClients(c);
       setPlatform(ps);
+      setTopups(tp);
     } finally {
       setLoading(false);
     }
@@ -149,6 +156,37 @@ export default function AdminSettings() {
       showToast(ar ? '✅ تم حفظ تكاليف المنصات' : '✅ Platform costs saved');
     } catch (e) { showToast(`❌ ${e.message}`); }
     finally { setSavingCosts(false); }
+  };
+
+  // ── Top-up helpers ──
+  const saveTopupPkg = async (pkg) => {
+    setSavingTopup(pkg.id || 'new');
+    try {
+      const saved = await adminSaveTopup({
+        ...pkg,
+        tokens: Number(pkg.tokens),
+        price_usd: Number(pkg.price_usd),
+        sort_order: pkg.sort_order ?? topups.length + 1,
+      });
+      if (pkg.id) {
+        setTopups(prev => prev.map(t => t.id === saved.id ? saved : t));
+      } else {
+        setTopups(prev => [...prev, saved]);
+        setNewTopup({ tokens: '', price_usd: '', is_popular: false });
+      }
+      showToast(ar ? '✅ تم الحفظ' : '✅ Saved');
+    } catch (e) { showToast(`❌ ${e.message}`); }
+    finally { setSavingTopup(null); }
+  };
+
+  const deleteTopupPkg = async (id) => {
+    setSavingTopup(id);
+    try {
+      await adminDeleteTopup(id);
+      setTopups(prev => prev.filter(t => t.id !== id));
+      showToast(ar ? '🗑 تم الحذف' : '🗑 Deleted');
+    } catch (e) { showToast(`❌ ${e.message}`); }
+    finally { setSavingTopup(null); }
   };
 
   if (loading) return <Spinner centered />;
@@ -453,6 +491,85 @@ export default function AdminSettings() {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* ── Top-up Packages ── */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden' }}>
+        <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontWeight: 900, fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Package size={18} style={{ color: 'var(--primary)' }} />
+            {ar ? 'حزم الشحن' : 'Top-up Packages'}
+          </h2>
+        </div>
+        <div style={{ padding: 24 }}>
+          {/* Existing packages */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+            {topups.map(pkg => (
+              <div key={pkg.id} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 16px', borderRadius: 12,
+                background: 'var(--surface2)', border: '1px solid var(--border)',
+              }}>
+                <Zap size={16} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                <input type="number" value={pkg.tokens}
+                  onChange={e => setTopups(prev => prev.map(t => t.id === pkg.id ? { ...t, tokens: e.target.value } : t))}
+                  style={{ width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }} />
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{ar ? 'توكن' : 'tokens'}</span>
+                <span style={{ marginInline: 4, color: 'var(--text-muted)' }}>@</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>$</span>
+                <input type="number" step="0.01" value={pkg.price_usd}
+                  onChange={e => setTopups(prev => prev.map(t => t.id === pkg.id ? { ...t, price_usd: e.target.value } : t))}
+                  style={{ width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', marginInlineStart: 8 }}>
+                  <input type="checkbox" checked={pkg.is_popular}
+                    onChange={e => setTopups(prev => prev.map(t => t.id === pkg.id ? { ...t, is_popular: e.target.checked } : t))} />
+                  {ar ? 'الأفضل' : 'Popular'}
+                </label>
+                <div style={{ flex: 1 }} />
+                <button onClick={() => saveTopupPkg(pkg)} disabled={savingTopup === pkg.id}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: 'rgba(16,185,129,0.1)', color: '#10B981', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {savingTopup === pkg.id ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={12} />}
+                  {ar ? 'حفظ' : 'Save'}
+                </button>
+                <button onClick={() => deleteTopupPkg(pkg.id)} disabled={savingTopup === pkg.id}
+                  style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Add new package */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '12px 16px', borderRadius: 12,
+            border: '2px dashed var(--border)',
+          }}>
+            <Plus size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input type="number" placeholder={ar ? 'التوكنات' : 'Tokens'} value={newTopup.tokens}
+              onChange={e => setNewTopup(p => ({ ...p, tokens: e.target.value }))}
+              style={{ width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: 14 }} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{ar ? 'توكن' : 'tokens'}</span>
+            <span style={{ marginInline: 4, color: 'var(--text-muted)' }}>@</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>$</span>
+            <input type="number" step="0.01" placeholder="0.00" value={newTopup.price_usd}
+              onChange={e => setNewTopup(p => ({ ...p, price_usd: e.target.value }))}
+              style={{ width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', fontSize: 14 }} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer', marginInlineStart: 8 }}>
+              <input type="checkbox" checked={newTopup.is_popular}
+                onChange={e => setNewTopup(p => ({ ...p, is_popular: e.target.checked }))} />
+              {ar ? 'الأفضل' : 'Popular'}
+            </label>
+            <div style={{ flex: 1 }} />
+            <button
+              onClick={() => newTopup.tokens && newTopup.price_usd && saveTopupPkg(newTopup)}
+              disabled={!newTopup.tokens || !newTopup.price_usd || savingTopup === 'new'}
+              style={{ padding: '6px 16px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
+              {savingTopup === 'new' ? <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> : <Plus size={12} />}
+              {ar ? 'إضافة' : 'Add'}
+            </button>
+          </div>
         </div>
       </div>
 

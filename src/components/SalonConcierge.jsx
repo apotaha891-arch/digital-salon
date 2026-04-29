@@ -63,10 +63,10 @@ export default function SalonConcierge({ lang = 'ar' }) {
     if (open) setTimeout(() => inputRef.current?.focus(), 120);
   }, [open]);
 
-  // Show contact form after 4 user messages
+  // Show contact form after 2 user messages
   useEffect(() => {
     const userCount = messages.filter(m => m.role === 'user').length;
-    if (userCount >= 4 && !contactSent && !showContactForm) {
+    if (userCount >= 2 && !contactSent && !showContactForm) {
       setShowContactForm(true);
     }
   }, [messages]);

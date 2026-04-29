@@ -105,6 +105,42 @@ export const adminUpdatePlatformSetting = async (platform, tokenCost) => {
   return data;
 };
 
+// ─── Top-up Packages Management ───
+
+export const adminGetTopups = async () => {
+  const { data, error } = await supabase
+    .from('topup_packages')
+    .select('*')
+    .order('sort_order');
+  if (error) throw error;
+  return data || [];
+};
+
+export const adminSaveTopup = async (pkg) => {
+  const payload = { ...pkg, updated_at: new Date().toISOString() };
+  if (pkg.id) {
+    const { data, error } = await supabase
+      .from('topup_packages')
+      .update(payload)
+      .eq('id', pkg.id)
+      .select().single();
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await supabase
+      .from('topup_packages')
+      .insert(payload)
+      .select().single();
+    if (error) throw error;
+    return data;
+  }
+};
+
+export const adminDeleteTopup = async (id) => {
+  const { error } = await supabase.from('topup_packages').delete().eq('id', id);
+  if (error) throw error;
+};
+
 // ─── Concierge Leads ───
 
 export const adminGetLeads = async () => {

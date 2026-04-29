@@ -125,19 +125,6 @@ export default function PricingCard({
         </div>
       </div>
 
-      {/* Top-up Price */}
-      {plan.topup_price_per_token && (
-        <div style={{ 
-          marginBottom: 16, padding: '8px 12px', borderRadius: 10,
-          background: 'var(--surface2)', border: '1px dashed var(--border)',
-          fontSize: 11, color: 'var(--text-muted)', textAlign: 'center'
-        }}>
-          {isAr ? 'سعر الرسالة الإضافية:' : 'Top-up price:'}{' '}
-          <strong style={{ color: 'var(--text)' }}>${plan.topup_price_per_token}</strong>
-          /{isAr ? 'رسالة' : 'token'}
-        </div>
-      )}
-
       {/* Booking Fee Info */}
       {plan.booking_payment_enabled && (
         <div style={{ 

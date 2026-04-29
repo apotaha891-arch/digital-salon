@@ -372,43 +372,12 @@ export default function Billing() {
             </div>
           ) : (
             <>
-              {/* Rate Info */}
-              <div style={{
-                marginBottom: 24, padding: '14px 20px', borderRadius: 14,
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-              }}>
-                <div>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>
-                    {isAr ? `خطتك: ${currentPlan?.name_ar}` : `Your plan: ${currentPlan?.name}`}
-                  </span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)', marginInlineStart: 8 }}>
-                    — {isAr ? 'سعر الرسالة الإضافية:' : 'Top-up rate:'}{' '}
-                    <strong style={{ color: 'var(--primary)' }}>${currentPlan?.topup_price_per_token}</strong>/{isAr ? 'رسالة' : 'token'}
-                  </span>
-                </div>
-                {currentPlanId === 'starter' && (
-                  <button 
-                    onClick={() => setActiveTab('plans')}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '6px 14px', borderRadius: 10, border: 'none',
-                      background: 'rgba(217,70,239,0.1)', color: 'var(--primary)',
-                      fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit'
-                    }}
-                  >
-                    {isAr ? 'ترقية للحصول على سعر أقل' : 'Upgrade for cheaper rate'}
-                    <ArrowRight size={12} />
-                  </button>
-                )}
-              </div>
-
               {/* Top-up Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                 {(currentTopups.length > 0 ? currentTopups : [
-                  { tokens: 50, price_usd: currentPlanId === 'pro' ? 7.50 : 10, is_popular: false },
-                  { tokens: 100, price_usd: currentPlanId === 'pro' ? 15 : 20, is_popular: true },
-                  { tokens: 200, price_usd: currentPlanId === 'pro' ? 30 : 40, is_popular: false },
+                  { tokens: 50,  price_usd: 10, is_popular: false },
+                  { tokens: 100, price_usd: 20, is_popular: true },
+                  { tokens: 200, price_usd: 40, is_popular: false },
                 ]).map((pkg, idx) => (
                   <div key={idx} style={{
                     padding: 24, borderRadius: 20,
