@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Loader2, Home, Briefcase, BookOpen, Globe } from 'lucide-react';
+import { Settings, Save, Loader2, Home, Briefcase, BookOpen, Globe, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useBusiness } from '../../hooks/useBusiness';
 import { useSubscription } from '../../hooks/useSubscription';
+import { useStaff } from '../../hooks/useStaff';
 
 import BusinessTab from './tabs/BusinessTab';
 import ServicesTab from './tabs/ServicesTab';
+import StaffTab from './tabs/StaffTab';
 import SourcesTab from './tabs/SourcesTab';
 import SalonPageTab from './tabs/SalonPageTab';
 import Spinner from '../../components/ui/Spinner';
@@ -23,12 +25,14 @@ export default function Setup() {
   const TABS = [
     { id: 'business', label: t('setup.tabs.business'), icon: Home },
     { id: 'services', label: t('setup.tabs.services'), icon: Briefcase },
+    { id: 'staff',    label: t('setup.tabs.staff'),    icon: Users },
     { id: 'sources',  label: t('setup.tabs.sources'),  icon: BookOpen },
     { id: 'page',     label: t('setup.tabs.page'),     icon: Globe },
   ];
 
   // Hook for persistent data
   const { business, loading: bLoading, updateBusiness, saving: bSaving } = useBusiness(user?.id);
+  const { staff, addMember, editMember, removeMember } = useStaff(user?.id);
 
   const [localBusiness, setLocalBusiness] = useState(null);
   const DEFAULT_BUSINESS = { name: '', phone: '', location: '', hours: '', instagram: '', services: [], metadata: {} };
@@ -101,6 +105,16 @@ export default function Setup() {
           <ServicesTab 
             services={localBusiness.services || []} 
             onUpdate={services => setLocalBusiness({ ...localBusiness, services })} 
+          />
+        )}
+
+        {activeTab === 'staff' && (
+          <StaffTab
+            staff={staff}
+            services={localBusiness.services || []}
+            onAdd={addMember}
+            onEdit={editMember}
+            onRemove={removeMember}
           />
         )}
 

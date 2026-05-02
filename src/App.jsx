@@ -16,6 +16,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminClients from './pages/admin/AdminClients';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminLeads from './pages/admin/AdminLeads';
+import AdminSalesCRM from './pages/admin/AdminSalesCRM';
+import AdminAgentConfig from './pages/admin/AdminAgentConfig';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import ResetPassword from './pages/ResetPassword';
@@ -67,6 +69,8 @@ const AppRoutes = () => {
       <Route path="/admin/clients" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminClients /></Layout></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminSettings /></Layout></ProtectedRoute>} />
       <Route path="/admin/leads" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminLeads /></Layout></ProtectedRoute>} />
+      <Route path="/admin/crm" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminSalesCRM /></Layout></ProtectedRoute>} />
+      <Route path="/admin/agent" element={<ProtectedRoute adminOnly><Layout isAdmin><AdminAgentConfig /></Layout></ProtectedRoute>} />
 
       <Route path="/" element={<Landing />} />
       <Route path="/contact" element={<Contact />} />

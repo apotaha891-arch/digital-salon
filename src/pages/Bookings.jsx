@@ -4,10 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { useBookings } from '../hooks/useBookings';
 import { useBusiness } from '../hooks/useBusiness';
 import { useCustomers } from '../hooks/useCustomers';
+import { useStaff } from '../hooks/useStaff';
 import {
   Calendar, Clock, Phone, Scissors, CheckCircle, XCircle,
   AlertCircle, CalendarCheck, CalendarX, Filter, ChevronLeft, ChevronRight,
-  MessageCircle, Send, Camera, Plus, X, Loader2, Search, UserPlus
+  MessageCircle, Send, Camera, Plus, X, Loader2, Search, UserPlus, User
 } from 'lucide-react';
 import Spinner from '../components/ui/Spinner';
 
@@ -28,7 +29,7 @@ const CHANNEL_ICONS = {
 
 const PAGE_SIZE = 8;
 
-const EMPTY_FORM = { clientName: '', clientPhone: '', serviceName: '', date: '', time: '' };
+const EMPTY_FORM = { clientName: '', clientPhone: '', serviceName: '', date: '', time: '', staffId: '', staffName: '' };
 
 export default function Bookings() {
   const { t, i18n } = useTranslation();
@@ -36,6 +37,7 @@ export default function Bookings() {
   const { bookings, loading, updateStatus, addBooking, filters, setFilters } = useBookings(user?.id);
   const { business } = useBusiness(user?.id);
   const { customers } = useCustomers(user?.id);
+  const { staff } = useStaff(user?.id);
   const [page, setPage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -46,6 +48,16 @@ export default function Bookings() {
   const isAr = i18n.language === 'ar';
 
   const services = business?.services || [];
+  const activeStaff = staff.filter(s => s.is_active !== false);
+
+  // Staff eligible for the selected service
+  const eligibleStaff = form.serviceName
+    ? activeStaff.filter(s => {
+        if (!s.specialties || s.specialties.length === 0) return true;
+        const svc = services.find(sv => sv.name === form.serviceName);
+        return svc ? s.specialties.includes(svc.id) : true;
+      })
+    : activeStaff;
 
   const filteredCustomers = customers.filter(c => {
     if (!customerSearch.trim()) return true;
@@ -67,7 +79,12 @@ export default function Bookings() {
     setSaving(true);
     setFormError('');
     try {
-      await addBooking({ ...form, channel: 'manual' });
+      await addBooking({
+        ...form,
+        channel: 'manual',
+        staffId:   form.staffId   || null,
+        staffName: form.staffName || null,
+      });
       setShowModal(false);
       setForm(EMPTY_FORM);
       setCustomerSearch('');
@@ -232,7 +249,7 @@ export default function Bookings() {
                 {services.length > 0 ? (
                   <select
                     value={form.serviceName}
-                    onChange={e => setForm(p => ({ ...p, serviceName: e.target.value }))}
+                    onChange={e => setForm(p => ({ ...p, serviceName: e.target.value, staffId: '', staffName: '' }))}
                     className="form-input"
                     style={{ width: '100%', boxSizing: 'border-box' }}
                   >
@@ -246,12 +263,56 @@ export default function Bookings() {
                     type="text"
                     value={form.serviceName}
                     placeholder={isAr ? 'قص شعر، صبغة...' : 'Haircut, Color...'}
-                    onChange={e => setForm(p => ({ ...p, serviceName: e.target.value }))}
+                    onChange={e => setForm(p => ({ ...p, serviceName: e.target.value, staffId: '', staffName: '' }))}
                     className="form-input"
                     style={{ width: '100%', boxSizing: 'border-box' }}
                   />
                 )}
               </div>
+
+              {/* Staff picker */}
+              {activeStaff.length > 0 && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                    {isAr ? 'الموظفة / الخبيرة' : 'Staff Member'}
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {/* No preference option */}
+                    <button
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, staffId: '', staffName: '' }))}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+                        border: `1.5px solid ${!form.staffId ? 'var(--primary)' : 'var(--border)'}`,
+                        background: !form.staffId ? 'rgba(217,70,239,0.1)' : 'var(--surface2)',
+                        color: !form.staffId ? 'var(--primary)' : 'var(--text-muted)',
+                        cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+                      }}
+                    >
+                      {isAr ? 'أي موظفة' : 'Any'}
+                    </button>
+                    {eligibleStaff.map(member => (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, staffId: member.id, staffName: member.name }))}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '8px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+                          border: `1.5px solid ${form.staffId === member.id ? 'var(--primary)' : 'var(--border)'}`,
+                          background: form.staffId === member.id ? 'rgba(217,70,239,0.1)' : 'var(--surface2)',
+                          color: form.staffId === member.id ? 'var(--primary)' : 'var(--text)',
+                          cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+                        }}
+                      >
+                        <span style={{ fontSize: 16 }}>{member.avatar || '👤'}</span>
+                        {member.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {formError && (
@@ -371,7 +432,7 @@ export default function Bookings() {
           {/* Table Header */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px',
+            gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 1fr 100px',
             padding: '14px 24px',
             background: 'var(--surface2)',
             borderBottom: '1px solid var(--border)',
@@ -380,6 +441,7 @@ export default function Bookings() {
           }}>
             <span>{isAr ? 'العميلة' : 'Customer'}</span>
             <span>{isAr ? 'الخدمة' : 'Service'}</span>
+            <span>{isAr ? 'الموظفة' : 'Staff'}</span>
             <span>{isAr ? 'التاريخ' : 'Date'}</span>
             <span>{isAr ? 'الوقت' : 'Time'}</span>
             <span>{isAr ? 'الحالة' : 'Status'}</span>
@@ -399,7 +461,7 @@ export default function Bookings() {
                 key={booking.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 100px',
+                  gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 1fr 100px',
                   padding: '16px 24px',
                   alignItems: 'center',
                   borderBottom: idx < pageBookings.length - 1 ? '1px solid var(--border)' : 'none',
@@ -438,6 +500,20 @@ export default function Bookings() {
                   <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {booking.service_name}
                   </span>
+                </div>
+
+                {/* Staff */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {booking.staff_name ? (
+                    <>
+                      <User size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                      <span style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {booking.staff_name}
+                      </span>
+                    </>
+                  ) : (
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', opacity: 0.5 }}>—</span>
+                  )}
                 </div>
 
                 {/* Date */}

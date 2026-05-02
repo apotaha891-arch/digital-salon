@@ -140,7 +140,7 @@ export default function Pricing() {
           )}
         </div>
 
-        <div ref={ref} className="ln-plans-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div ref={ref} className="ln-plans-grid ln-plans-grid--3col">
           {plans.map((plan, i) => (
             <div
               key={plan.id}

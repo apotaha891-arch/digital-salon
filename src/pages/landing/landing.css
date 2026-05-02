@@ -610,6 +610,11 @@ body.light-mode .ln-nav {
   margin: 0 auto;
 }
 
+.ln-plans-grid--3col {
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1100px;
+}
+
 .ln-plan-card {
   background: var(--surface);
   border: 2px solid var(--border);
@@ -936,7 +941,8 @@ body.light-mode .ln-nav {
 
   .ln-features-grid { grid-template-columns: 1fr 1fr; }
 
-  .ln-plans-grid { grid-template-columns: 1fr; max-width: 400px; }
+  .ln-plans-grid,
+  .ln-plans-grid--3col { grid-template-columns: 1fr; max-width: 400px; }
 
   .ln-testimonials-grid { grid-template-columns: 1fr; }
 
@@ -981,5 +987,6 @@ body.light-mode .ln-nav {
   .ln-hero-inner { gap: 40px; }
   .ln-features-grid { grid-template-columns: repeat(2, 1fr); }
   .ln-testimonials-grid { grid-template-columns: repeat(2, 1fr); }
-  .ln-plans-grid { grid-template-columns: repeat(2, 1fr); max-width: 680px; }
+  .ln-plans-grid,
+  .ln-plans-grid--3col { grid-template-columns: repeat(2, 1fr); max-width: 680px; }
 }

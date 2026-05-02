@@ -16,7 +16,9 @@ import {
   Languages,
   Plug,
   Store,
-  MessagesSquare
+  MessagesSquare,
+  BarChart2,
+  Bot
 } from 'lucide-react';
 import { signOut } from '../../services/supabase';
 import { SECTOR } from '../../config/sector';
@@ -44,6 +46,8 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
     { to: '/admin',          icon: LayoutDashboard, label: t('admin.dashboard.title') },
     { to: '/admin/clients',  icon: Users,            label: t('admin.clients.title') },
     { to: '/admin/leads',    icon: MessagesSquare,   label: t('admin.leads.title') },
+    { to: '/admin/crm',      icon: BarChart2,         label: t('admin.crm.title') },
+    { to: '/admin/agent',    icon: Bot,               label: t('admin.agent.title') },
     { to: '/admin/settings', icon: Settings,         label: t('common.setup') },
   ];
 

@@ -89,6 +89,7 @@
       "page": "Salon Page",
       "business": "Salon Info",
       "services": "Services & Bookings",
+      "staff": "Staff",
       "persona": "Agent Persona",
       "integrations": "Tech Integrations",
       "business_title": "Primary Salon Info 🏠",
@@ -265,6 +266,12 @@
   "admin": {
     "leads": {
       "title": "Website Leads"
+    },
+    "crm": {
+      "title": "Sales CRM"
+    },
+    "agent": {
+      "title": "AI Agent"
     },
     "dashboard": {
       "title": "Admin Dashboard 🛡️",

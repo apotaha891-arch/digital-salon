@@ -5,7 +5,16 @@
       "Bash(node --input-type=module --check)",
       "Bash(supabase functions *)",
       "Bash(npx supabase *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\moza4\\\\Digital Salon\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npx tsc *)",
+      "Bash(node --input-type=module --eval ' *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\moza4\\\\Digital Salon\")",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\moza4\\\\Digital Salon\\\\supabase\\\\functions\\\\generate-outreach\" -Force)",
+      "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\moza4\\\\Digital Salon\\\\supabase\\\\functions\\\\classify-intent\" -Force)"
     ]
   }
 }

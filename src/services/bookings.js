@@ -27,7 +27,7 @@ export const updateBookingStatus = async (bookingId, status) => {
   return data;
 };
 
-export const createBooking = async (salonId, { clientName, clientPhone, serviceName, date, time, channel = 'manual' }) => {
+export const createBooking = async (salonId, { clientName, clientPhone, serviceName, date, time, channel = 'manual', staffId, staffName }) => {
   const { data, error } = await supabase.rpc('create_booking', {
     p_salon_id:     salonId,
     p_client_name:  clientName,
@@ -38,5 +38,15 @@ export const createBooking = async (salonId, { clientName, clientPhone, serviceN
     p_channel:      channel,
   });
   if (error) throw error;
+
+  // Attach staff info if provided — ignore error if columns don't exist yet
+  if (data && (staffId || staffName)) {
+    await supabase
+      .from('bookings')
+      .update({ staff_id: staffId || null, staff_name: staffName || null })
+      .eq('id', data)
+      .then(() => {}); // fire-and-forget, never throw
+  }
+
   return data;
 };
