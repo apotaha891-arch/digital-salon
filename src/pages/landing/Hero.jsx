@@ -25,7 +25,7 @@ export default function Hero() {
             borderRadius: 50, padding: '6px 16px', fontSize: 13, fontWeight: 700,
             color: 'var(--primary)', marginBottom: 24
           }}>
-            ✨ {isAr ? 'موظفة استقبال رقمية ذكية' : 'AI-Powered Digital Receptionist'}
+            ✨ {isAr ? 'منصة إدارة الصالونات الشاملة' : 'All-in-One Salon Management Platform'}
           </div>
 
           <h1 className="ln-hero-title">{t('landing.hero.title')}</h1>

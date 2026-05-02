@@ -118,13 +118,13 @@ export default function SourcesTab() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
           <Sparkles style={{ color: 'var(--primary)' }} size={22} />
           <h3 style={{ fontWeight: 900, margin: 0 }}>
-            {isAr ? 'استيراد ذكي بالـ AI' : 'AI-Powered Smart Import'}
+            {isAr ? 'استيراد بيانات الصالون تلقائياً' : 'Auto-Import Salon Data'}
           </h3>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
           {isAr
-            ? 'ارفع ملف صالونك أو أدخل رابط موقعك وسيقوم الـ AI باستخراج بيانات العمل تلقائياً'
-            : 'Upload your salon document or enter your website URL and AI will extract your business data automatically'}
+            ? 'ارفع ملف صالونك أو أدخل رابط موقعك وسيتم استخراج بيانات العمل تلقائياً'
+            : 'Upload your salon document or enter your website URL and your business data will be extracted automatically'}
         </p>
       </div>
 
@@ -238,8 +238,8 @@ export default function SourcesTab() {
           </div>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, margin: '8px 0 0' }}>
             {isAr
-              ? 'سيقوم الـ AI بزيارة موقعك وقراءة بيانات الصالون منه تلقائياً'
-              : 'AI will visit your website and read your salon data automatically'}
+              ? 'سيتم زيارة موقعك وقراءة بيانات الصالون منه تلقائياً'
+              : 'Your website will be visited and salon data will be read automatically'}
           </p>
         </div>
       )}
@@ -347,7 +347,7 @@ export default function SourcesTab() {
         >
           {loading
             ? <><Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> {isAr ? 'جاري الاستخراج...' : 'Extracting...'}</>
-            : <><Zap size={18} /> {isAr ? 'استخراج البيانات بالـ AI' : 'Extract Data with AI'}</>
+            : <><Zap size={18} /> {isAr ? 'استخراج البيانات تلقائياً' : 'Extract Data Automatically'}</>
           }
         </button>
       )}

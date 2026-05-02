@@ -4,21 +4,21 @@ const WIDGET_CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/conci
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const QUICK_AR = [
-  'كيف يعمل الحجز التلقائي؟',
-  'ما القنوات المدعومة؟',
-  'كم تكلف الخطة الشهرية؟',
-  'هل يوجد نسخة تجريبية مجانية؟',
-  'كيف أربط واتساب بالبوت؟',
-  'ماذا يحدث عند نفاد الرصيد؟',
+  'ما هي Digital Salon؟',
+  'ما الباقات المتاحة والأسعار؟',
+  'هل تناسب مراكز السبا أيضاً؟',
+  'هل يوجد تجربة مجانية؟',
+  'كيف أضيف عملائي للنظام؟',
+  'ما الفرق بين الباقات؟',
 ];
 
 const QUICK_EN = [
-  'How does auto-booking work?',
-  'Which channels are supported?',
-  'How much is the monthly plan?',
+  'What is Digital Salon?',
+  'What plans and pricing are available?',
+  'Does it work for spas too?',
   'Is there a free trial?',
-  'How do I connect WhatsApp?',
-  'What happens when balance runs out?',
+  'How do I add my customers?',
+  'What is the difference between plans?',
 ];
 
 function genSessionId() {
@@ -214,8 +214,8 @@ export default function SalonConcierge({ lang = 'ar' }) {
           }}>
             <Bubble isBot>
               {isAr
-                ? 'أهلاً! 👋 أنا لين، مساعدتك الذكية في Digital Salon\nكيف يمكنني مساعدتك اليوم؟'
-                : "Hello! 👋 I'm Lina, your Digital Salon AI assistant\nHow can I help you today?"}
+                ? 'أهلاً! 👋 أنا لين، مساعدتك في Digital Salon\nمنصة إدارة العملاء والحجوزات للصالونات ومراكز السبا\nكيف يمكنني مساعدتك؟'
+                : "Hello! 👋 I'm Lina, your Digital Salon assistant\nThe customer & booking management platform for salons and spas\nHow can I help you today?"}
             </Bubble>
 
             {messages.map((msg, i) => (

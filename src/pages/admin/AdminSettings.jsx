@@ -21,7 +21,10 @@ const PLATFORM_META = {
   concierge: { label: 'Concierge', icon: Globe,         color: '#8B5CF6' },
 };
 
-const PLAN_ICONS = { starter: Star, pro: Crown, business: Building2 };
+const PLAN_ICONS = {
+  presence: Star, operations: Crown, marketing: Building2,
+  starter: Star, pro: Crown, business: Building2,
+};
 
 const Field = ({ label, value, editing, onChange, type = 'text', step }) => (
   <div>
@@ -47,6 +50,41 @@ const Field = ({ label, value, editing, onChange, type = 'text', step }) => (
     )}
   </div>
 );
+
+const FeaturesField = ({ label, value, editing, onChange }) => {
+  const lines = (() => {
+    try { return (typeof value === 'string' ? JSON.parse(value) : (value || [])).join('\n'); }
+    catch { return value || ''; }
+  })();
+  const toJson = (text) => JSON.stringify(text.split('\n').map(s => s.trim()).filter(Boolean));
+  return (
+    <div style={{ gridColumn: '1 / -1' }}>
+      <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 4 }}>{label}</div>
+      {editing ? (
+        <textarea
+          rows={5}
+          value={lines}
+          onChange={e => onChange(toJson(e.target.value))}
+          placeholder="كل ميزة في سطر مستقل"
+          style={{
+            width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 12,
+            background: 'var(--surface)', border: '1px solid var(--primary)',
+            color: 'var(--text)', outline: 'none', fontFamily: 'inherit',
+            resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6,
+          }}
+        />
+      ) : (
+        <div style={{
+          padding: '8px 10px', borderRadius: 8, fontSize: 12,
+          background: 'var(--surface2)', border: '1px solid var(--border)',
+          color: 'var(--text-muted)', lineHeight: 1.8, whiteSpace: 'pre-wrap',
+        }}>
+          {lines || '—'}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function AdminSettings() {
   const { i18n } = useTranslation();
@@ -110,6 +148,8 @@ export default function AdminSettings() {
         topup_price_per_token: Number(draftPlan.topup_price_per_token),
         stripe_price_id:       draftPlan.stripe_price_id,
         is_active:             draftPlan.is_active,
+        features:              draftPlan.features,
+        features_ar:           draftPlan.features_ar,
       });
       setPlans(prev => prev.map(p => p.id === updated.id ? updated : p));
       cancelEditPlan();
@@ -368,12 +408,12 @@ export default function AdminSettings() {
                   display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
                 }}>
                   {[
-                    { key: 'price_usd',            label: t('Price (USD)', 'السعر ($)'),                       type: 'number' },
-                    { key: 'monthly_tokens',        label: t('Tokens / Month', 'التوكنات / شهر'),               type: 'number' },
-                    { key: 'trial_days',            label: t('Trial Days', 'أيام التجربة'),                     type: 'number' },
-                    { key: 'topup_price_per_token', label: t('Top-up Price / Token ($)', 'سعر التوكن الإضافي ($)'), type: 'number', step: '0.001' },
-                    { key: 'stripe_price_id',       label: 'Stripe Price ID',                                   type: 'text' },
-                    { key: 'name_ar',               label: t('Arabic Name', 'الاسم بالعربي'),                   type: 'text' },
+                    { key: 'price_usd',            label: t('Price (USD)', 'السعر ($)'),                            type: 'number' },
+                    { key: 'trial_days',            label: t('Trial Days', 'أيام التجربة'),                          type: 'number' },
+                    { key: 'stripe_price_id',       label: 'Stripe Price ID',                                        type: 'text' },
+                    { key: 'name_ar',               label: t('Arabic Name', 'الاسم بالعربي'),                        type: 'text' },
+                    { key: 'topup_price_per_token', label: t('Top-up Price / Token ($)', 'سعر التوكن الإضافي ($)'),  type: 'number', step: '0.001' },
+                    { key: 'monthly_tokens',        label: t('Tokens / Month (internal)', 'التوكنات / شهر (داخلي)'), type: 'number' },
                   ].map(({ key, label, type, step }) => (
                     <Field
                       key={key}
@@ -385,6 +425,18 @@ export default function AdminSettings() {
                       onChange={val => setDraftPlan(prev => ({ ...prev, [key]: val }))}
                     />
                   ))}
+                  <FeaturesField
+                    label={t('Features (English — one per line)', 'المميزات (إنجليزي — كل ميزة في سطر)')}
+                    value={draft.features}
+                    editing={isEditing}
+                    onChange={val => setDraftPlan(prev => ({ ...prev, features: val }))}
+                  />
+                  <FeaturesField
+                    label={t('Features (Arabic — one per line)', 'المميزات (عربي — كل ميزة في سطر)')}
+                    value={draft.features_ar}
+                    editing={isEditing}
+                    onChange={val => setDraftPlan(prev => ({ ...prev, features_ar: val }))}
+                  />
                 </div>
               </div>
             );

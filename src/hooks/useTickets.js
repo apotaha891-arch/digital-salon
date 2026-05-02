@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getTickets, updateTicketStatus } from '../services/tickets';
+import { getTickets, updateTicketStatus, createTicket } from '../services/tickets';
 
 export function useTickets(userId) {
   const [tickets, setTickets] = useState([]);
@@ -32,11 +32,23 @@ export function useTickets(userId) {
     }
   };
 
+  const addTicket = async (details) => {
+    try {
+      const ticket = await createTicket(userId, details);
+      setTickets(prev => [ticket, ...prev]);
+      return ticket;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
   return {
     tickets,
     loading,
     error,
     updateStatus,
+    addTicket,
     refreshTickets: loadTickets
   };
 }

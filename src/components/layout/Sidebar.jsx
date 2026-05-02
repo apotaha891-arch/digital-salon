@@ -28,12 +28,11 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
   const navigate = useNavigate();
 
   const clientNav = [
-    { to: '/dashboard',    icon: LayoutDashboard, label: t('common.dashboard') },
-    { to: '/bookings',     icon: CalendarCheck,   label: t('common.bookings') },
-    { to: '/customers',    icon: Users,            label: t('common.customers') },
-    { to: '/setup',        icon: Settings,         label: t('common.setup') },
-    { to: '/integrations', icon: Plug,             label: t('sidebar.connect') },
-    { to: '/billing',      icon: CreditCard,       label: t('common.billing') },
+    { to: '/dashboard',  icon: LayoutDashboard, label: t('common.dashboard') },
+    { to: '/bookings',   icon: CalendarCheck,   label: t('common.bookings') },
+    { to: '/customers',  icon: Users,           label: t('common.customers') },
+    { to: '/setup',      icon: Settings,        label: t('common.setup') },
+    { to: '/billing',    icon: CreditCard,      label: t('common.billing') },
   ];
 
   const adminNav = [

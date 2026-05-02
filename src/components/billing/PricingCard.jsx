@@ -2,15 +2,21 @@ import React from 'react';
 import { Check, Zap, Star, Crown, Building2, Loader2 } from 'lucide-react';
 
 const PLAN_ICONS = {
+  presence: Star,
+  operations: Crown,
+  marketing: Building2,
   starter: Star,
   pro: Crown,
   business: Building2,
 };
 
 const PLAN_COLORS = {
-  starter: { primary: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)' },
-  pro: { primary: '#D946EF', gradient: 'linear-gradient(135deg, #D946EF, #A855F7)' },
-  business: { primary: '#F59E0B', gradient: 'linear-gradient(135deg, #F59E0B, #EAB308)' },
+  presence:   { primary: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)' },
+  operations: { primary: '#D946EF', gradient: 'linear-gradient(135deg, #D946EF, #A855F7)' },
+  marketing:  { primary: '#F59E0B', gradient: 'linear-gradient(135deg, #F59E0B, #EAB308)' },
+  starter:    { primary: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)' },
+  pro:        { primary: '#D946EF', gradient: 'linear-gradient(135deg, #D946EF, #A855F7)' },
+  business:   { primary: '#F59E0B', gradient: 'linear-gradient(135deg, #F59E0B, #EAB308)' },
 };
 
 export default function PricingCard({
@@ -98,17 +104,9 @@ export default function PricingCard({
           </div>
         )}
         
-        {/* Tokens */}
-        <div style={{ 
-          marginTop: 8, padding: '6px 12px', borderRadius: 10,
-          background: `${colors.primary}10`, display: 'inline-flex',
-          alignItems: 'center', gap: 6
-        }}>
-          <Zap size={14} style={{ color: colors.primary }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: colors.primary }}>
-            {plan.monthly_tokens} {isAr ? 'رسالة' : 'tokens'}/{isAr ? 'شهر' : 'mo'}
-          </span>
-        </div>
+        {plan.monthly_tokens > 0 && false && (
+          <div style={{ marginTop: 8 }} />
+        )}
       </div>
 
       {/* Features List */}

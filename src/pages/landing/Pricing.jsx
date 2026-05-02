@@ -2,6 +2,106 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useInView } from '../../hooks/useInView';
+import { Check } from 'lucide-react';
+
+const PLANS = (isAr) => [
+  {
+    id: 'presence',
+    name: isAr ? 'الحضور الرقمي' : 'Digital Presence',
+    tagline: isAr ? 'ابدأ وجودك الرقمي باحترافية' : 'Build your digital presence professionally',
+    priceM: '39',
+    priceY: '32',
+    popular: false,
+    color: '#3B82F6',
+    gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
+    emoji: '🌐',
+    features: isAr ? [
+      'صفحة هبوط احترافية للصالون',
+      'ربط حسابات السوشيال ميديا',
+      'واتساب • انستقرام • تيليقرام',
+      'ردود تلقائية على الأسئلة الشائعة',
+      'تحويل العملاء لقنوات التواصل',
+      'إدارة الحجوزات يدوياً',
+      'إدارة العملاء يدوياً',
+      'تذاكر دعم يدوية',
+      '14 يوم مجاناً',
+    ] : [
+      'Professional salon landing page',
+      'Social media accounts linking',
+      'WhatsApp • Instagram • Telegram',
+      'Auto replies for common questions',
+      'Redirect customers to channels',
+      'Manual bookings management',
+      'Manual customer management',
+      'Manual support tickets',
+      '14-day free trial',
+    ],
+  },
+  {
+    id: 'operations',
+    name: isAr ? 'إدارة العمليات' : 'Operations',
+    tagline: isAr ? 'حجوزات وخدمة عملاء ذكية' : 'Smart bookings & customer service',
+    priceM: '119',
+    priceY: '99',
+    popular: true,
+    color: '#D946EF',
+    gradient: 'linear-gradient(135deg, #D946EF, #A855F7)',
+    emoji: '⚡',
+    features: isAr ? [
+      'كل مميزات الحضور الرقمي +',
+      'حجوزات تلقائية من جميع القنوات',
+      'خدمة عملاء على مدار 24/7',
+      'تذاكر دعم تلقائية',
+      'قاعدة بيانات العملاء الكاملة',
+      'تاريخ العميل وتفضيلاته',
+      'إشعارات وتذكيرات للمواعيد',
+      'تقارير الحجوزات والعملاء',
+      '14 يوم مجاناً',
+    ] : [
+      'Everything in Digital Presence +',
+      'Auto bookings from all channels',
+      '24/7 customer service',
+      'Automatic support tickets',
+      'Full customer database',
+      'Customer history & preferences',
+      'Appointment notifications & reminders',
+      'Bookings & customers reports',
+      '14-day free trial',
+    ],
+  },
+  {
+    id: 'marketing',
+    name: isAr ? 'التسويق والمحتوى' : 'Marketing & Content',
+    tagline: isAr ? 'نشر ومحتوى وحملات تسويقية' : 'Publishing, content & campaigns',
+    priceM: '199',
+    priceY: '165',
+    popular: false,
+    color: '#F59E0B',
+    gradient: 'linear-gradient(135deg, #F59E0B, #EAB308)',
+    emoji: '🚀',
+    features: isAr ? [
+      'كل مميزات إدارة العمليات +',
+      'إنتاج محتوى (صور وكابشن)',
+      'جدولة ونشر على السوشيال ميديا',
+      'حملات تسويقية موجهة',
+      'تقارير أداء المحتوى',
+      'استراتيجية محتوى شهرية',
+      'تحليل المنافسين',
+      'دعم أولوية مخصص',
+      '14 يوم مجاناً',
+    ] : [
+      'Everything in Operations +',
+      'Content creation (images & captions)',
+      'Schedule & publish on social media',
+      'Targeted marketing campaigns',
+      'Content performance reports',
+      'Monthly content strategy',
+      'Competitor analysis',
+      'Dedicated priority support',
+      '14-day free trial',
+    ],
+  },
+];
 
 export default function Pricing() {
   const { t, i18n } = useTranslation();
@@ -10,105 +110,96 @@ export default function Pricing() {
   const [ref, inView] = useInView();
   const isAr = i18n.language === 'ar';
 
-  const plans = [
-    {
-      name: 'Starter',
-      tagline: isAr ? 'مثالية للصالون الصغير' : 'Perfect for small salons',
-      priceM: '29', priceY: '23',
-      popular: false,
-      features: [
-        isAr ? '200 توكن/شهر' : '200 tokens/mo',
-        'Instagram',
-        'Messenger',
-        'Telegram',
-        isAr ? 'حجز تلقائي' : 'Auto Booking',
-        isAr ? 'CRM العملاء' : 'Customer CRM',
-        isAr ? 'توكن يُرحَّل' : 'Tokens roll over',
-        { text: isAr ? 'WhatsApp 🔜 قريباً' : 'WhatsApp 🔜 Soon', soon: true },
-      ],
-    },
-    {
-      name: 'Pro',
-      tagline: isAr ? 'للصالون الذي يريد التميز' : 'For salons that want to excel',
-      priceM: '49', priceY: '39',
-      popular: true,
-      features: [
-        isAr ? '400 توكن/شهر' : '400 tokens/mo',
-        'Instagram',
-        'Messenger',
-        'Telegram',
-        isAr ? 'حجز تلقائي' : 'Auto Booking',
-        isAr ? 'CRM العملاء' : 'Customer CRM',
-        isAr ? 'توكن يُرحَّل' : 'Tokens roll over',
-        isAr ? 'أولوية الدعم' : 'Priority Support',
-        { text: isAr ? 'WhatsApp 🔜 قريباً' : 'WhatsApp 🔜 Soon', soon: true },
-      ],
-    },
-  ];
+  const plans = PLANS(isAr);
 
   return (
     <section id="pricing" className="ln-section ln-pricing-bg">
       <div className="ln-container">
-        <p className="ln-section-label">💰 Pricing</p>
-        <h2 className="ln-section-title">{t('landing.pricing.title')}</h2>
-        <p className="ln-section-sub">{t('landing.pricing.trial')}</p>
+        <p className="ln-section-label">💰 {isAr ? 'الأسعار' : 'Pricing'}</p>
+        <h2 className="ln-section-title">
+          {isAr ? 'اختر الباقة المناسبة لصالونك' : 'Choose the right plan for your salon'}
+        </h2>
+        <p className="ln-section-sub">
+          {isAr ? 'جميع الباقات تشمل 14 يوم تجربة مجانية — لا تحتاج بطاقة ائتمان' : 'All plans include a 14-day free trial — no credit card required'}
+        </p>
 
         {/* Billing toggle */}
         <div className="ln-billing-toggle">
           <div className="ln-toggle-pill">
             <button className={`ln-toggle-opt ${!annual ? 'active' : ''}`} onClick={() => setAnnual(false)}>
-              {t('landing.pricing.monthly')}
+              {isAr ? 'شهري' : 'Monthly'}
             </button>
             <button className={`ln-toggle-opt ${annual ? 'active' : ''}`} onClick={() => setAnnual(true)}>
-              {t('landing.pricing.annual')}
+              {isAr ? 'سنوي' : 'Annual'}
             </button>
           </div>
-          {annual && <span className="ln-save-badge">{t('landing.pricing.save')}</span>}
+          {annual && (
+            <span className="ln-save-badge">
+              {isAr ? '🎉 وفّر 20%' : '🎉 Save 20%'}
+            </span>
+          )}
         </div>
 
-        <div ref={ref} className="ln-plans-grid">
+        <div ref={ref} className="ln-plans-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
           {plans.map((plan, i) => (
             <div
-              key={plan.name}
+              key={plan.id}
               className={`ln-plan-card ln-fade-up ${plan.popular ? 'popular' : ''} ${inView ? 'ln-visible' : ''}`}
-              style={{ transitionDelay: `${i * 0.15}s` }}
+              style={{
+                transitionDelay: `${i * 0.15}s`,
+                border: plan.popular ? `2px solid ${plan.color}` : undefined,
+                boxShadow: plan.popular ? `0 8px 40px ${plan.color}25` : undefined,
+                transform: plan.popular ? 'scale(1.03)' : undefined,
+              }}
             >
               {plan.popular && (
-                <div className="ln-popular-tag">
+                <div className="ln-popular-tag" style={{ background: plan.gradient }}>
                   {isAr ? '⭐ الأكثر طلباً' : '⭐ Most Popular'}
                 </div>
               )}
 
-              <div className="ln-plan-name">{plan.name}</div>
-              <div className="ln-plan-tagline">{plan.tagline}</div>
-
-              <div className="ln-plan-price">
-                <span className="ln-price-dollar">$</span>
-                <span className="ln-price-amount">{annual ? plan.priceY : plan.priceM}</span>
-                <span className="ln-price-period">{t('landing.pricing.per_month')}</span>
+              {/* Header */}
+              <div style={{ marginBottom: 20, marginTop: plan.popular ? 12 : 0 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>{plan.emoji}</div>
+                <div className="ln-plan-name" style={{ color: plan.color }}>{plan.name}</div>
+                <div className="ln-plan-tagline">{plan.tagline}</div>
               </div>
 
-              <ul className="ln-plan-features">
-                {plan.features.map((f, j) => {
-                  const isSoon = typeof f === 'object';
-                  const text = isSoon ? f.text : f;
-                  return (
-                    <li key={j}>
-                      <span className={isSoon ? 'ln-soon-text' : 'ln-check'}>{isSoon ? '🔜' : '✓'}</span>
-                      <span style={isSoon ? { color: 'var(--text-muted)' } : {}}>{text}</span>
-                    </li>
-                  );
-                })}
+              {/* Price */}
+              <div className="ln-plan-price" style={{ marginBottom: 24 }}>
+                <span className="ln-price-dollar">$</span>
+                <span className="ln-price-amount" style={{ color: plan.color }}>
+                  {annual ? plan.priceY : plan.priceM}
+                </span>
+                <span className="ln-price-period">/{isAr ? 'شهر' : 'mo'}</span>
+              </div>
+
+              {/* Features */}
+              <ul className="ln-plan-features" style={{ flex: 1 }}>
+                {plan.features.map((f, j) => (
+                  <li key={j} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                    <Check size={15} style={{ color: plan.color, flexShrink: 0, marginTop: 2 }} />
+                    <span style={{ fontSize: 13, lineHeight: 1.5 }}>{f}</span>
+                  </li>
+                ))}
               </ul>
 
-              <button className="ln-btn-primary" style={{ width: '100%' }} onClick={() => navigate('/login')}>
-                {t('landing.pricing.cta')}
+              <button
+                className="ln-btn-primary"
+                style={{ width: '100%', background: plan.gradient, border: 'none', marginTop: 20 }}
+                onClick={() => navigate('/login')}
+              >
+                {isAr ? 'ابدأ التجربة المجانية' : 'Start Free Trial'}
               </button>
             </div>
           ))}
         </div>
 
-        <p className="ln-pricing-note">{t('landing.pricing.note')}</p>
+        <p className="ln-pricing-note">
+          {isAr
+            ? '✦ جميع الباقات تراكمية — الباقة الأعلى تشمل كل مميزات الباقة الأدنى'
+            : '✦ All plans are cumulative — higher plans include all features of lower ones'}
+        </p>
       </div>
     </section>
   );

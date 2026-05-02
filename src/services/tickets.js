@@ -10,6 +10,24 @@ export const getTickets = async (userId) => {
   return data || [];
 };
 
+export const createTicket = async (userId, { clientName, clientPhone, subject, message }) => {
+  const { data, error } = await supabase
+    .from('tickets')
+    .insert({
+      user_id: userId,
+      client_name: clientName,
+      client_phone: clientPhone,
+      subject,
+      message,
+      status: 'open',
+      channel: 'manual',
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
 export const updateTicketStatus = async (ticketId, status) => {
   const { data, error } = await supabase
     .from('tickets')

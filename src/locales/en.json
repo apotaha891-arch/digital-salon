@@ -81,11 +81,12 @@
   },
   "setup": {
     "title": "Comprehensive Salon Settings",
-    "subtitle": "Control every detail of your salon and digital employee from one place",
+    "subtitle": "Control every detail of your salon from one place",
     "save_success": "Changes saved successfully ✨",
     "save_btn": "Save Changes",
     "tabs": {
-      "sources": "Knowledge Sources",
+      "sources": "Import Data",
+      "page": "Salon Page",
       "business": "Salon Info",
       "services": "Services & Bookings",
       "persona": "Agent Persona",
@@ -317,45 +318,45 @@
       "cta": "Get Started"
     },
     "hero": {
-      "title": "AI Receptionist for Your Salon — 24/7",
-      "subtitle": "Automate bookings and replies across Instagram, Messenger & Telegram — in Arabic and English. Let AI handle chats while you focus on your craft.",
+      "title": "Run Your Salon — From One Smart Platform",
+      "subtitle": "Manage bookings, customers, and support tickets all in one place. Get a digital presence, automate operations, and grow your client base — starting at $39/mo.",
       "cta1": "Start Free Trial →",
-      "cta2": "Watch Demo",
-      "badge_booking": "Auto Booking",
-      "badge_instant": "Instant Reply",
-      "badge_247": "Available 24/7"
+      "cta2": "See How It Works",
+      "badge_booking": "Bookings & CRM",
+      "badge_instant": "All Channels",
+      "badge_247": "14-Day Free Trial"
     },
     "proof": {
       "text": "Integrated with"
     },
     "how": {
       "title": "How It Works",
-      "step1_title": "Create Your Salon Profile",
-      "step1_desc": "Enter your salon details, services, and working hours in minutes.",
-      "step2_title": "Connect Your Channels",
-      "step2_desc": "Link your Instagram, Messenger, and Telegram accounts in one click.",
-      "step3_title": "AI Takes Over",
-      "step3_desc": "The assistant replies to clients, books appointments, and remembers every preference.",
-      "wa_soon": "WhatsApp Coming Soon 🔜"
+      "step1_title": "Set Up Your Salon",
+      "step1_desc": "Enter your salon info, services, and pricing in minutes — your digital profile is ready.",
+      "step2_title": "Add Your Customers",
+      "step2_desc": "Build your CRM by adding clients from walk-ins, WhatsApp, Instagram, Telegram, or phone calls.",
+      "step3_title": "Manage & Grow",
+      "step3_desc": "Log bookings, handle support tickets, and track every client relationship from one dashboard.",
+      "wa_soon": "Channel Automation Coming with Operations Plan"
     },
     "features": {
       "title": "Everything You Need in One Place",
-      "ai_title": "AI-Powered Replies",
-      "ai_desc": "A smart assistant that understands Arabic and English and responds professionally to client questions.",
-      "booking_title": "Auto Booking",
-      "booking_desc": "Accepts and records appointments directly in your system without manual intervention.",
+      "crm_title": "Customer Management",
+      "crm_desc": "Add and track all your clients — with their contact info, visit history, and preferred channel.",
+      "booking_title": "Bookings",
+      "booking_desc": "Log appointments manually or let clients book through your channels — all tracked in one calendar.",
       "multi_title": "Multi-Channel",
-      "multi_desc": "Instagram, Messenger, Telegram — all managed from one dashboard.",
-      "memory_title": "Client Memory",
-      "memory_desc": "The assistant remembers every client's preferences and past visit history.",
+      "multi_desc": "Track customers from WhatsApp, Instagram, Telegram, phone, or walk-in — in one CRM.",
+      "ticket_title": "Support Tickets",
+      "ticket_desc": "Never miss a client request. Log, track, and resolve support tickets with ease.",
       "reports_title": "Smart Reports",
-      "reports_desc": "Daily and weekly stats on conversations, bookings, and revenue.",
-      "tokens_title": "Token System",
-      "tokens_desc": "Pay only for what you use — unused tokens roll over to the next month."
+      "reports_desc": "Daily and weekly stats on bookings, clients, and revenue — always know where your business stands.",
+      "presence_title": "Digital Presence",
+      "presence_desc": "Get a booking-ready landing page for your salon so clients can find and book you online."
     },
     "demo": {
-      "title": "See the AI in Action",
-      "subtitle": "A real conversation between a client and your salon AI assistant"
+      "title": "See Your Dashboard in Action",
+      "subtitle": "Customers, bookings, and stats — all in one place"
     },
     "pricing": {
       "title": "Simple, Transparent Pricing",
@@ -369,43 +370,43 @@
     },
     "testimonials": {
       "title": "What Salon Owners Are Saying",
-      "t1_text": "I used to spend all my time answering messages. Now the AI handles it and I focus on my work.",
+      "t1_text": "Finally a system that keeps all my client info in one place. I know exactly who came in, when, and what they booked.",
       "t1_name": "Noura Al-Shammari",
       "t1_salon": "Noura Salon — Riyadh",
-      "t2_text": "My clients love how fast the responses are. They say it feels like having a dedicated assistant 24/7!",
+      "t2_text": "My clients can book directly through Instagram now. It feels so professional — and I didn't have to do any setup myself.",
       "t2_name": "Layla Al-Otaibi",
       "t2_salon": "Leila Beauty — Jeddah",
-      "t3_text": "Bookings increased 40% in the first month because the AI responds even late at night.",
+      "t3_text": "Bookings and client management in one place has saved me so much time. I know my numbers every single day.",
       "t3_name": "Mona Al-Qahtani",
       "t3_salon": "Mona Glam Studio — Dammam"
     },
     "faq": {
       "title": "Frequently Asked Questions",
       "q1": "Do I need technical experience to use the platform?",
-      "a1": "Not at all. Setup takes less than 5 minutes with a simple, user-friendly interface.",
-      "q2": "Which channels are currently supported?",
-      "a2": "Instagram, Messenger (Facebook), and Telegram. WhatsApp is in development and coming soon.",
-      "q3": "What's the difference between Starter and Pro plans?",
-      "a3": "The main difference is monthly token count (200 vs 400) and priority support in the Pro plan.",
+      "a1": "Not at all. Setup takes less than 5 minutes. The interface is simple, in Arabic and English, and our team is available to help.",
+      "q2": "What is included in each plan?",
+      "a2": "Plans are cumulative. Digital Presence ($39) includes your salon profile and manual CRM. Operations ($119) adds channel automation and smart booking. Marketing & Content ($199) adds growth tools on top.",
+      "q3": "Can I add customers and bookings manually?",
+      "a3": "Yes. Every plan lets you manually add customers, log bookings, and create support tickets — no automation needed to get started.",
       "q4": "Can I cancel my subscription anytime?",
       "a4": "Yes. No binding contracts. Cancel anytime from your dashboard.",
-      "q5": "How does the token system work?",
-      "a5": "Each reply consumes one token. Unused tokens roll over to the next month and are never lost.",
-      "q6": "Can the assistant book appointments directly?",
-      "a6": "Yes. It can accept appointments and log them in the booking system automatically based on availability.",
+      "q5": "How do channel connections work?",
+      "a5": "Our team connects your Instagram, WhatsApp, Telegram, and other channels for you — you don't need to configure anything technical.",
+      "q6": "Will clients be able to book through my social channels?",
+      "a6": "Yes, on the Operations plan and above. Clients can message you through Instagram, WhatsApp, or Telegram and get confirmed automatically.",
       "q7": "Is my data and client data secure?",
-      "a7": "Absolutely. We use Supabase with full encryption. Your data is yours and will never be shared.",
-      "q8": "Can I customize the assistant's responses?",
-      "a8": "Yes. From the setup page you can customize the assistant name, reply tone, available services, and working hours."
+      "a7": "Absolutely. We use Supabase with full encryption. Your data is yours and will never be shared with any third party.",
+      "q8": "What is the 14-day free trial?",
+      "a8": "All plans start with a 14-day free trial — no credit card required. You can explore everything before committing."
     },
     "final_cta": {
-      "title": "Ready to Get Started?",
-      "subtitle": "Join salon owners saving hours every week with Digital Salon",
+      "title": "Ready to Run Your Salon Smarter?",
+      "subtitle": "Join salon owners who manage customers, bookings, and growth from one platform",
       "cta1": "Start Your Free Trial →",
       "cta2": "Talk to Us"
     },
     "footer": {
-      "tagline": "AI-powered assistant for your salon — available 24/7",
+      "tagline": "The all-in-one management platform for salons",
       "copyright": "© 2025 Digital Salon · All rights reserved"
     }
   }

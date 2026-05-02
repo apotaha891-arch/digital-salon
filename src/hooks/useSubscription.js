@@ -7,12 +7,15 @@ export function useSubscription(userId) {
 
   useEffect(() => {
     if (!userId) return;
+    const NEW_PLAN_IDS = ['presence', 'operations', 'marketing'];
     Promise.all([
       supabase.from('subscriptions').select('*').eq('user_id', userId).maybeSingle(),
       supabase.from('subscription_plans').select('*').eq('is_active', true).order('sort_order'),
     ]).then(([subRes, plansRes]) => {
       setSubscription(subRes.data ?? null);
-      setPlans(plansRes.data ?? []);
+      const allPlans = plansRes.data ?? [];
+      const newPlans = allPlans.filter(p => NEW_PLAN_IDS.includes(p.id));
+      setPlans(newPlans);
     });
   }, [userId]);
 

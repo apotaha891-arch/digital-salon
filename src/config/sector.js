@@ -7,15 +7,15 @@ export const SECTOR = {
   id: 'beauty',
   name: 'Digital Salon',
   name_ar: 'الصالون الرقمي',
-  tagline: 'موظفتك الرقمية لصالون متميز',
-  tagline_en: 'Your Digital Employee for a Premium Salon',
+  tagline: 'منصة إدارة العملاء للصالونات ومراكز السبا',
+  tagline_en: 'Customer Management Platform for Salons & Spas',
 
-  // The AI Agent identity in this sector
+  // Concierge identity on the landing page
   agent: {
     defaultName: 'لين',
-    defaultName_en: 'Layn',
-    role_ar: 'مساعدة الحجز والاستقبال',
-    role_en: 'Booking & Reception Assistant',
+    defaultName_en: 'Lina',
+    role_ar: 'مساعدة خدمة العملاء',
+    role_en: 'Customer Service Assistant',
     avatar: '💅',
     personality: 'warm, professional, elegant',
   },

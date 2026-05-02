@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -20,6 +20,7 @@ import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import ResetPassword from './pages/ResetPassword';
 import Contact from './pages/Contact';
+import SalonPublicPage from './pages/SalonPublicPage';
 import SalonConcierge from './components/SalonConcierge';
 import './index.css';
 
@@ -34,6 +35,8 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 const AppRoutes = () => {
   const { user } = useAuth();
   const { i18n } = useTranslation();
+  const location = useLocation();
+  const isPublicSalonPage = location.pathname.startsWith('/s/');
 
   useEffect(() => {
     const dir = i18n.dir();
@@ -44,7 +47,7 @@ const AppRoutes = () => {
 
   return (
     <>
-    <SalonConcierge lang={i18n.language} />
+    {!isPublicSalonPage && <SalonConcierge lang={i18n.language} />}
     <Routes>
       <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -67,6 +70,7 @@ const AppRoutes = () => {
 
       <Route path="/" element={<Landing />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/s/:businessId" element={<SalonPublicPage />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
     </>

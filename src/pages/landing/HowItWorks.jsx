@@ -8,8 +8,8 @@ export default function HowItWorks() {
 
   const steps = [
     { num: '①', icon: '🏪', title: t('landing.how.step1_title'), desc: t('landing.how.step1_desc'), soon: false },
-    { num: '②', icon: '📱', title: t('landing.how.step2_title'), desc: t('landing.how.step2_desc'), soon: true },
-    { num: '③', icon: '🤖', title: t('landing.how.step3_title'), desc: t('landing.how.step3_desc'), soon: false },
+    { num: '②', icon: '👥', title: t('landing.how.step2_title'), desc: t('landing.how.step2_desc'), soon: false },
+    { num: '③', icon: '📈', title: t('landing.how.step3_title'), desc: t('landing.how.step3_desc'), soon: false },
   ];
 
   return (

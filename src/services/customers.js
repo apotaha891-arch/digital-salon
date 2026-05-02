@@ -11,6 +11,37 @@ export const getCustomers = async (userId) => {
   return data;
 };
 
+export const createCustomer = async (userId, { fullName, phone, notes, platform }) => {
+  const { data, error } = await supabase
+    .from('customers')
+    .insert({
+      user_id: userId,
+      full_name: fullName,
+      phone: phone || null,
+      notes: notes || null,
+      platform: platform || 'manual',
+      external_id: `manual_${Date.now()}`,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const bulkCreateCustomers = async (userId, rows) => {
+  const records = rows.map(r => ({
+    user_id: userId,
+    full_name: r.fullName,
+    phone: r.phone || null,
+    notes: r.notes || null,
+    platform: r.platform || 'manual',
+    external_id: `import_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+  }));
+  const { data, error } = await supabase.from('customers').insert(records).select();
+  if (error) throw error;
+  return data;
+};
+
 export const deleteCustomer = async (id) => {
   const { error } = await supabase
     .from('customers')

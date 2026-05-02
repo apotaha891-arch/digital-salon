@@ -1,114 +1,67 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Search, MessageCircle, Zap, ChevronRight, LifeBuoy,
-  BookOpen, Calendar, CreditCard, Wifi, Settings,
-  CheckCircle, AlertCircle, Info, Hash
+  Search, MessageCircle, ChevronRight, BookOpen,
+  Calendar, CreditCard, Users, Globe, LifeBuoy,
+  AlertCircle, Ticket, BarChart2,
 } from 'lucide-react';
 
+/* ─── Documentation content ────────────────────── */
 const DOCS = {
   en: [
     {
       id: 'getting-started',
-      icon: Zap,
+      icon: LifeBuoy,
       color: '#8B5CF6',
       title: 'Getting Started',
       steps: [
         {
           title: '1. Create your account',
-          body: 'Click "Start Now" on the homepage. Enter your email and password — no credit card needed. You\'ll instantly get 100 free tokens to try the platform.',
+          body: 'Click "Get Started" on the homepage. Enter your email and password — no credit card needed. Your 14-day free trial starts immediately.',
         },
         {
-          title: '2. Add your salon info',
-          body: 'Go to Salon Setup → Salon Info. Fill in your salon name, phone number, location, and working hours. Your AI agent uses this to answer customer questions.',
+          title: '2. Fill in your salon info',
+          body: 'Go to Salon Setup → Salon Info. Add your salon name, phone number, location, working hours, and Instagram handle. This info appears on your public booking page and in all client communications.',
         },
         {
           title: '3. Add your services',
-          body: 'Go to Salon Setup → Services. Add each service with its name, price, and duration in minutes. The agent will book appointments and quote prices automatically.',
+          body: 'Go to Salon Setup → Services. Add each service with its name, price (SAR), and duration. Services are displayed on your public page so clients know exactly what you offer.',
         },
         {
-          title: '4. Customize your agent',
-          body: 'Go to Salon Setup → Persona. Choose your agent\'s name, emoji, and personality. Add special instructions like "never give discounts" or "always greet in Arabic".',
+          title: '4. Build your public page',
+          body: 'Go to Salon Setup → Salon Page. Choose your color theme, appearance mode (dark / light / mix), upload your logo and cover image, and add your social media handles. Your page is live instantly at a unique link you can share.',
         },
         {
-          title: '5. Connect a channel',
-          body: 'Go to Connect Channel. Choose WhatsApp, Telegram, Instagram, or Facebook. Each has a simple setup guide inside the app. WhatsApp requires Meta Business API (1–3 days to approve).',
+          title: '5. Add your clients',
+          body: 'Go to Customers. Add clients manually with their name, phone, and preferred channel (walk-in, WhatsApp, Instagram, Telegram, phone). You can also import a list via Excel.',
         },
         {
-          title: '6. Activate your plan',
-          body: 'Go to Billing → Plans. Start your 14-day free trial on any plan — no credit card required. Your agent will begin responding to customers instantly.',
+          title: '6. Start logging bookings',
+          body: 'Go to Bookings. Add appointments manually, assign a client, service, date, and time. Track status: pending, confirmed, completed, or cancelled — all in one place.',
         },
       ],
     },
     {
-      id: 'channels',
-      icon: Wifi,
+      id: 'customers',
+      icon: Users,
       color: '#10B981',
-      title: 'Connecting Channels',
+      title: 'Customer Management (CRM)',
       steps: [
         {
-          title: 'WhatsApp Business API',
-          body: 'Requires an approved Meta Business account. Apply at business.facebook.com — approval takes 1–3 days. Once approved, you\'ll get an Access Token and Phone ID to paste in the app. Does NOT work with regular WhatsApp or personal WhatsApp Business.',
+          title: 'Adding clients',
+          body: 'Go to Customers → Add. Enter the client\'s name, phone number, notes, and how they contact you (WhatsApp, Instagram, Telegram, walk-in, phone). Every client has a dedicated profile.',
         },
         {
-          title: 'Telegram Bot',
-          body: 'Open Telegram and message @BotFather. Send /newbot, follow the steps, and copy the Token. Paste it in Connect Channel → Telegram. Your bot is live immediately.',
+          title: 'Importing from Excel',
+          body: 'Download the template from the Customers page, fill in your client list, then click "Import Excel". All clients are imported instantly. Column headers must match the template (Name, Phone, Notes, Channel).',
         },
         {
-          title: 'Instagram / Facebook',
-          body: 'Connect your Facebook Business Page. The agent will reply to Instagram DMs and Facebook Messenger automatically. Requires a Facebook Page (not a personal profile).',
+          title: 'Exporting your list',
+          body: 'Click "Export" on the Customers page to download your full client list as an Excel file. Useful for backup or sharing with your team.',
         },
         {
-          title: 'Website Widget',
-          body: 'Copy the HTML snippet from Connect Channel → Widget. Paste it before the </body> tag of your website. A chat bubble will appear for your website visitors.',
-        },
-      ],
-    },
-    {
-      id: 'tokens',
-      icon: Zap,
-      color: '#F59E0B',
-      title: 'Understanding Tokens',
-      steps: [
-        {
-          title: 'What is a token?',
-          body: 'Each message sent by your AI agent costs 1 token. Receiving messages from customers is free. A token is consumed only when the AI generates a reply.',
-        },
-        {
-          title: 'Free trial',
-          body: 'Every new account gets 100 free tokens. This is enough for ~100 customer conversations to test the platform.',
-        },
-        {
-          title: 'Rollover tokens',
-          body: 'Unused tokens never expire. They roll over to the next month automatically. If you cancel, your balance is frozen (not deleted) and restored when you resubscribe.',
-        },
-        {
-          title: 'When tokens run out',
-          body: 'Your agent pauses automatically. No messages are lost — the agent resumes as soon as you top up. Go to Billing → Top-up to add more tokens.',
-        },
-      ],
-    },
-    {
-      id: 'billing',
-      icon: CreditCard,
-      color: '#3B82F6',
-      title: 'Plans & Billing',
-      steps: [
-        {
-          title: 'Starter — $29/month',
-          body: '200 tokens/month. All channels (WhatsApp, Telegram, Instagram, Facebook). Booking system. Customer CRM. Email support. 14-day free trial.',
-        },
-        {
-          title: 'Pro — $49/month',
-          body: '400 tokens/month. Everything in Starter, plus: advanced bookings, analytics dashboard, priority support. 14-day free trial.',
-        },
-        {
-          title: 'Top-up packages',
-          body: 'Need more tokens mid-month? Buy 50 tokens for $10, 100 for $20, or 200 for $40. Top-ups never expire and stack with your monthly tokens.',
-        },
-        {
-          title: 'Free trial',
-          body: 'Every plan starts with a 14-day free trial. No credit card needed to start. You only pay after the trial ends — or cancel anytime before.',
+          title: 'Channel tracking',
+          body: 'Each client is tagged with the channel they use to reach you — WhatsApp, Instagram, Telegram, phone, or walk-in. This helps you understand where your clients come from.',
         },
       ],
     },
@@ -119,16 +72,96 @@ const DOCS = {
       title: 'Bookings',
       steps: [
         {
-          title: 'How bookings work',
-          body: 'Your agent receives booking requests from customers via any connected channel. It checks availability and books the slot automatically, then sends a confirmation to the customer.',
+          title: 'Adding a booking',
+          body: 'Go to Bookings → Add. Choose a client from your CRM (or enter their name), select the service, set the date and time, and save. The booking appears in your list immediately.',
         },
         {
-          title: 'Viewing your bookings',
-          body: 'Go to the Bookings page in the sidebar to see all upcoming and past appointments. You can filter by date, status, or customer name.',
+          title: 'Booking statuses',
+          body: 'Each booking has a status: Pending (awaiting confirmation), Confirmed (appointment set), Completed (service done), or Cancelled. Update statuses as appointments progress.',
         },
         {
-          title: 'Automatic reminders',
-          body: 'The agent sends automatic reminders to customers before their appointment — reducing no-shows.',
+          title: 'Filtering bookings',
+          body: 'Use the filter bar at the top of the Bookings page to filter by status, date, or search by client name or service. Helps you quickly find any appointment.',
+        },
+        {
+          title: 'Viewing history',
+          body: 'All past bookings are kept in your history. You can always look back to see when a client last visited, what service they had, and how much they paid.',
+        },
+      ],
+    },
+    {
+      id: 'public-page',
+      icon: Globe,
+      color: '#F59E0B',
+      title: 'Your Public Salon Page',
+      steps: [
+        {
+          title: 'What is the public page?',
+          body: 'Every salon gets a unique public page at digitalsalon.app/s/[your-id]. Clients can view your services, prices, contact info, and social media — and book directly via WhatsApp or your booking link.',
+        },
+        {
+          title: 'Customizing the page',
+          body: 'Go to Salon Setup → Salon Page. You can choose a color theme, appearance (dark / light / mix), upload a logo and cover image, add a tagline and description, and set a booking link.',
+        },
+        {
+          title: 'Adding social media',
+          body: 'In the Salon Page settings, scroll to "Social Media". Add your Instagram, Snapchat, TikTok, Twitter/X, WhatsApp, or Facebook handles. They appear as icons on your public page and in the floating header.',
+        },
+        {
+          title: 'Sharing your page',
+          body: 'Copy your public page URL from the Salon Page settings and share it on Instagram bio, WhatsApp status, or business card. Clients visit and can contact or book you directly.',
+        },
+        {
+          title: 'Chat widget on public page',
+          body: 'On Operations plan and above, a smart chat assistant appears on your public page — trained on your salon info, services, and pricing. It answers client questions and directs them to book via WhatsApp. On the Digital Presence plan, clients are directed to WhatsApp directly.',
+        },
+      ],
+    },
+    {
+      id: 'tickets',
+      icon: Ticket,
+      color: '#3B82F6',
+      title: 'Support Tickets',
+      steps: [
+        {
+          title: 'What are tickets?',
+          body: 'Support tickets are client requests or issues that need your attention. You can create them manually when a client has a complaint, a special request, or a question you need to follow up on.',
+        },
+        {
+          title: 'Creating a ticket',
+          body: 'Go to Help Tickets → New Ticket. Enter a title, description, and the client it\'s related to. The ticket is logged and tracked until resolved.',
+        },
+        {
+          title: 'Ticket statuses',
+          body: 'Tickets move through: Open → In Progress → Resolved. Update the status as you work on each case so nothing falls through the cracks.',
+        },
+      ],
+    },
+    {
+      id: 'billing',
+      icon: CreditCard,
+      color: '#D946EF',
+      title: 'Plans & Billing',
+      steps: [
+        {
+          title: 'Digital Presence — $39/month',
+          body: 'Your salon profile + manual CRM + booking log + support tickets + basic reports + public booking page. Perfect for getting organized and establishing a digital presence.',
+        },
+        {
+          title: 'Operations — $119/month',
+          body: 'Everything in Digital Presence, plus: channel connections (WhatsApp, Instagram, Telegram), smart booking from channels, advanced reports, and the AI chat assistant on your public page.',
+        },
+        {
+          title: 'Marketing & Content — $199/month',
+          body: 'Everything in Operations, plus: marketing tools, client outreach campaigns, and growth features to attract new clients and keep existing ones coming back.',
+        },
+        {
+          title: '14-day free trial',
+          body: 'All plans start with a 14-day free trial — no credit card required. You can explore all features before committing. Cancel anytime before the trial ends and you won\'t be charged.',
+        },
+        {
+          title: 'Cancellation',
+          body: 'Cancel anytime from Billing → Manage Subscription. No lock-in contracts. Your data stays in your account — you just lose access to paid features after the billing cycle ends.',
         },
       ],
     },
@@ -139,126 +172,79 @@ const DOCS = {
       title: 'Troubleshooting',
       steps: [
         {
-          title: 'Agent not responding',
-          body: 'Check: (1) Agent is set to Active on the Dashboard toggle. (2) Token balance is above 0. (3) Channel is connected — go to Connect Channel and verify the token/access details are saved.',
-        },
-        {
           title: 'Forgot password',
-          body: 'On the login page, click "Forgot password?" under the password field. Enter your email — you\'ll receive a reset link within a few minutes. Check spam if it doesn\'t arrive.',
+          body: 'On the login page, click "Forgot password?" below the password field. Enter your email address — you\'ll receive a reset link within a few minutes. Check your spam folder if it doesn\'t arrive.',
         },
         {
-          title: 'WhatsApp not connecting',
-          body: 'Ensure you\'re using Meta Business API credentials (not regular WhatsApp). The Phone ID and Access Token must match the phone number registered in Meta. Tokens expire — regenerate in Meta Business if needed.',
+          title: 'Public page not showing my services',
+          body: 'Go to Salon Setup → Services and make sure services are added and saved. Then go to Salon Setup → Salon Page and confirm "Show services list" is toggled on. Hit Save Page.',
         },
         {
-          title: 'Wrong replies from agent',
-          body: 'Go to Salon Setup → Persona and update the agent\'s instructions. Be specific: "Always quote prices in SAR", "Do not accept bookings on Fridays", etc. The more detail you add, the better the replies.',
+          title: 'Logo or image not uploading',
+          body: 'Images are stored securely — if the upload seems slow, try a smaller file (under 1MB for logo, under 3MB for cover). JPG and PNG formats are supported. If it still fails, try a different browser.',
+        },
+        {
+          title: 'Excel import not working',
+          body: 'Use the template downloaded from the Customers page. Do not rename the column headers. Save the file as .xlsx before importing. Each row = one client.',
         },
       ],
     },
   ],
+
   ar: [
     {
       id: 'getting-started',
-      icon: Zap,
+      icon: LifeBuoy,
       color: '#8B5CF6',
       title: 'البدء مع المنصة',
       steps: [
         {
           title: '١. إنشاء حسابك',
-          body: 'اضغط "ابدأ الآن" في الصفحة الرئيسية. أدخل بريدك الإلكتروني وكلمة المرور — لا تحتاج بطاقة ائتمان. ستحصل فوراً على 100 توكن مجاني للتجربة.',
+          body: 'اضغط "ابدأ الآن" في الصفحة الرئيسية. أدخل بريدك الإلكتروني وكلمة المرور — لا تحتاج بطاقة ائتمان. تبدأ التجربة المجانية لـ14 يوماً فوراً.',
         },
         {
           title: '٢. بيانات الصالون',
-          body: 'اذهب إلى Salon Setup ← Salon Info. أدخل اسم الصالون، رقم الهاتف، الموقع، وأوقات العمل. الموظفة ستستخدم هذه المعلومات في ردودها على العملاء.',
+          body: 'اذهب إلى إعدادات الصالون ← معلومات الصالون. أدخل اسم الصالون، رقم الهاتف، الموقع، أوقات العمل، وحساب إنستغرام. هذه المعلومات تظهر في صفحتك العامة وفي كل التواصل مع العملاء.',
         },
         {
           title: '٣. إضافة الخدمات',
-          body: 'اذهب إلى Salon Setup ← Services. أضف كل خدمة باسمها وسعرها ومدتها بالدقائق. الموظفة ستحجز المواعيد وتعطي الأسعار تلقائياً.',
+          body: 'اذهب إلى إعدادات الصالون ← الخدمات. أضف كل خدمة باسمها وسعرها بالريال ومدتها بالدقائق. الخدمات تظهر في صفحتك العامة حتى يعرف العملاء ما تقدمينه.',
         },
         {
-          title: '٤. تخصيص الموظفة',
-          body: 'اذهب إلى Salon Setup ← Persona. اختري اسم موظفتك وشخصيتها. أضيفي تعليمات خاصة مثل "لا تعطي خصومات" أو "رحّبي دائماً بالاسم".',
+          title: '٤. بناء صفحتك العامة',
+          body: 'اذهب إلى إعدادات الصالون ← صفحة الصالون. اختاري لون الهوية والمظهر (داكن / فاتح / مزيج)، ارفعي الشعار وصورة الغلاف، وأضيفي حسابات التواصل. صفحتك تكون جاهزة فوراً برابط خاص.',
         },
         {
-          title: '٥. ربط القناة',
-          body: 'اذهب إلى Connect Channel. اختاري واتساب أو تيليجرام أو إنستغرام أو فيسبوك. كل قناة فيها دليل تفصيلي داخل التطبيق.',
+          title: '٥. إضافة عملائك',
+          body: 'اذهب إلى العملاء. أضيفي عملاءك يدوياً باسمهم ورقم هاتفهم وقناة تواصلهم (واتساب، إنستغرام، تيليجرام، زيارة مباشرة، هاتف). يمكنك أيضاً استيراد قائمة من إكسيل.',
         },
         {
-          title: '٦. تفعيل الباقة',
-          body: 'اذهب إلى Billing ← Plans. ابدأ التجربة المجانية 14 يوماً على أي باقة — بدون بطاقة. الموظفة ستبدأ بالرد على العملاء فوراً.',
+          title: '٦. تسجيل الحجوزات',
+          body: 'اذهب إلى الحجوزات. أضيفي المواعيد يدوياً بتحديد العميل والخدمة والتاريخ والوقت. تابعي الحالة: معلق، مؤكد، مكتمل، أو ملغى — كل شيء في مكان واحد.',
         },
       ],
     },
     {
-      id: 'channels',
-      icon: Wifi,
+      id: 'customers',
+      icon: Users,
       color: '#10B981',
-      title: 'ربط القنوات',
+      title: 'إدارة العملاء (CRM)',
       steps: [
         {
-          title: 'واتساب Business API',
-          body: 'يحتاج حساب Meta Business معتمد. قدّم على business.facebook.com — الموافقة تأخذ 1-3 أيام. بعد الموافقة ستحصل على Access Token وPhone ID تُدخلهما في التطبيق. لا يعمل مع واتساب العادي أو واتساب Business الشخصي.',
+          title: 'إضافة عميلة',
+          body: 'اذهب إلى العملاء ← إضافة. أدخلي اسم العميلة، رقم هاتفها، ملاحظات، وقناة التواصل (واتساب، إنستغرام، تيليجرام، هاتف، زيارة مباشرة). لكل عميلة ملف خاص.',
         },
         {
-          title: 'بوت تيليجرام',
-          body: 'افتح تيليجرام وراسل @BotFather. أرسل /newbot واتبع الخطوات، وانسخ الـ Token. الصقه في Connect Channel ← Telegram. البوت يعمل فوراً.',
+          title: 'استيراد من إكسيل',
+          body: 'حمّلي القالب من صفحة العملاء، أدخلي قائمة عملائك، ثم اضغطي "استيراد إكسيل". يُضاف العملاء فوراً. عناوين الأعمدة يجب أن تطابق القالب (الاسم، الهاتف، الملاحظات، القناة).',
         },
         {
-          title: 'إنستغرام / فيسبوك',
-          body: 'اربطي صفحتك على فيسبوك Business. الموظفة ستردّ على رسائل إنستغرام Direct وفيسبوك Messenger تلقائياً. يتطلب صفحة فيسبوك رسمية (ليس حساباً شخصياً).',
+          title: 'تصدير القائمة',
+          body: 'اضغطي "تصدير" في صفحة العملاء لتحميل قائمة عملائك الكاملة كملف إكسيل. مفيد للنسخ الاحتياطي أو مشاركة الفريق.',
         },
         {
-          title: 'ويدجت الموقع',
-          body: 'انسخي كود HTML من Connect Channel ← Widget. ضعيه قبل </body> في موقعك. ستظهر فقاعة محادثة لزوار موقعك.',
-        },
-      ],
-    },
-    {
-      id: 'tokens',
-      icon: Zap,
-      color: '#F59E0B',
-      title: 'نظام التوكن',
-      steps: [
-        {
-          title: 'ما هو التوكن؟',
-          body: 'كل رسالة يرسلها الذكاء الاصطناعي تستهلك توكن واحد. استقبال رسائل العملاء مجاني. التوكن يُستهلك فقط عندما يُنشئ الذكاء الاصطناعي رداً.',
-        },
-        {
-          title: 'التجربة المجانية',
-          body: 'كل حساب جديد يحصل على 100 توكن مجاني. يكفي لـ ~100 محادثة مع العملاء لتجربة المنصة.',
-        },
-        {
-          title: 'ترحيل الرصيد',
-          body: 'التوكنات لا تنتهي ولا تُحذف. تُرحَّل للشهر القادم تلقائياً. إذا ألغيتِ الاشتراك، رصيدك مجمّد (محفوظ) ويعود عند إعادة الاشتراك.',
-        },
-        {
-          title: 'عند نفاد الرصيد',
-          body: 'الموظفة تتوقف تلقائياً. لا تُفقد رسائل — تعود للعمل فور الشحن. اذهبي إلى Billing ← Top-up لإضافة توكنات.',
-        },
-      ],
-    },
-    {
-      id: 'billing',
-      icon: CreditCard,
-      color: '#3B82F6',
-      title: 'الباقات والفواتير',
-      steps: [
-        {
-          title: 'Starter — $29/شهر',
-          body: '200 توكن شهرياً. جميع القنوات (واتساب، تيليجرام، إنستغرام، فيسبوك). نظام حجوزات. إدارة عملاء. دعم بالإيميل. تجربة مجانية 14 يوم.',
-        },
-        {
-          title: 'Pro — $49/شهر',
-          body: '400 توكن شهرياً. كل مميزات Starter + حجوزات متقدمة + تحليلات + دعم أولوية. تجربة مجانية 14 يوم.',
-        },
-        {
-          title: 'الشحن الإضافي',
-          body: 'تحتاجين توكنات إضافية؟ اشحني 50 توكن بـ$10، أو 100 بـ$20، أو 200 بـ$40. لا تنتهي وتُضاف للرصيد الحالي.',
-        },
-        {
-          title: 'التجربة المجانية',
-          body: 'كل باقة تبدأ بـ14 يوم مجاني. لا تحتاجين بطاقة ائتمان للبدء. تدفعين فقط بعد انتهاء التجربة — أو تلغين في أي وقت قبلها.',
+          title: 'تتبع القنوات',
+          body: 'كل عميلة مرتبطة بالقناة التي تتواصل عبرها — واتساب، إنستغرام، تيليجرام، هاتف، أو زيارة مباشرة. يساعدك في فهم من أين يأتي عملاؤك.',
         },
       ],
     },
@@ -266,19 +252,99 @@ const DOCS = {
       id: 'bookings',
       icon: Calendar,
       color: '#EC4899',
-      title: 'نظام الحجوزات',
+      title: 'الحجوزات',
       steps: [
         {
-          title: 'كيف تعمل الحجوزات',
-          body: 'الموظفة تستقبل طلبات الحجز عبر أي قناة مربوطة. تتحقق من المواعيد المتاحة وتحجز تلقائياً، ثم ترسل تأكيداً للعميل فوراً.',
+          title: 'إضافة حجز',
+          body: 'اذهب إلى الحجوزات ← إضافة. اختاري عميلة من قاعدة البيانات، حددي الخدمة والتاريخ والوقت، واحفظي. الحجز يظهر في قائمتك فوراً.',
         },
         {
-          title: 'عرض الحجوزات',
-          body: 'اذهبي إلى صفحة Bookings في القائمة الجانبية لتري كل المواعيد القادمة والسابقة. يمكنك الفلترة بالتاريخ أو الحالة أو اسم العميل.',
+          title: 'حالات الحجز',
+          body: 'لكل حجز حالة: معلق (ينتظر التأكيد)، مؤكد، مكتمل، أو ملغى. حدّثي الحالة مع تقدم كل موعد.',
         },
         {
-          title: 'تذكير تلقائي',
-          body: 'الموظفة ترسل تذكيراً تلقائياً للعميل قبل موعده — يقلّل حالات عدم الحضور.',
+          title: 'فلترة الحجوزات',
+          body: 'استخدمي شريط الفلتر في أعلى صفحة الحجوزات للتصفية بالحالة أو التاريخ أو البحث باسم العميلة أو الخدمة.',
+        },
+        {
+          title: 'سجل الحجوزات',
+          body: 'جميع المواعيد السابقة محفوظة. يمكنك دائماً معرفة آخر زيارة للعميلة، الخدمة التي أخذتها، والمبلغ المدفوع.',
+        },
+      ],
+    },
+    {
+      id: 'public-page',
+      icon: Globe,
+      color: '#F59E0B',
+      title: 'صفحة الصالون العامة',
+      steps: [
+        {
+          title: 'ما هي الصفحة العامة؟',
+          body: 'كل صالون يحصل على صفحة عامة برابط خاص. العملاء يرون خدماتك وأسعارك ومعلومات التواصل والسوشيال ميديا — ويحجزون مباشرة عبر واتساب أو رابط الحجز.',
+        },
+        {
+          title: 'تخصيص الصفحة',
+          body: 'اذهب إلى إعدادات الصالون ← صفحة الصالون. اختاري لون الهوية والمظهر (داكن / فاتح / مزيج)، ارفعي الشعار وصورة الغلاف، وأضيفي شعاراً ووصفاً ورابط حجز.',
+        },
+        {
+          title: 'إضافة السوشيال ميديا',
+          body: 'في إعدادات صفحة الصالون، انتقلي لقسم "حسابات التواصل الاجتماعي". أضيفي إنستغرام، سناب شات، تيك توك، تويتر/X، واتساب، أو فيسبوك. تظهر كأيقونات في صفحتك.',
+        },
+        {
+          title: 'مشاركة الصفحة',
+          body: 'انسخي رابط صفحتك من إعدادات صفحة الصالون وشاركيه في بيو إنستغرام، حالة واتساب، أو بطاقة الأعمال. العملاء يزورون ويتواصلون أو يحجزون مباشرة.',
+        },
+        {
+          title: 'ويدجت الدردشة',
+          body: 'في باقة العمليات وما فوق، يظهر مساعد ذكي في صفحتك مدرّب على معلومات صالونك وخدماتك وأسعارك. يجيب على أسئلة العملاء ويوجههم للحجز عبر واتساب. في باقة الحضور الرقمي، يُحوَّل العميل مباشرة لواتساب.',
+        },
+      ],
+    },
+    {
+      id: 'tickets',
+      icon: Ticket,
+      color: '#3B82F6',
+      title: 'تذاكر الدعم',
+      steps: [
+        {
+          title: 'ما هي التذاكر؟',
+          body: 'تذاكر الدعم هي طلبات أو مشكلات من العملاء تحتاج متابعتك. أنشئيها يدوياً عند وجود شكوى أو طلب خاص أو سؤال يحتاج متابعة.',
+        },
+        {
+          title: 'إنشاء تذكرة',
+          body: 'اذهب إلى تذاكر المساعدة ← تذكرة جديدة. أدخلي عنواناً ووصفاً والعميلة المعنية. التذكرة تُسجّل وتُتابع حتى يتم حلها.',
+        },
+        {
+          title: 'حالات التذاكر',
+          body: 'التذاكر تمر بـ: مفتوحة ← قيد المعالجة ← محلولة. حدّثي الحالة مع عملك على كل حالة حتى لا يفوتك شيء.',
+        },
+      ],
+    },
+    {
+      id: 'billing',
+      icon: CreditCard,
+      color: '#D946EF',
+      title: 'الباقات والفواتير',
+      steps: [
+        {
+          title: 'الحضور الرقمي — $39/شهر',
+          body: 'ملف الصالون + إدارة العملاء يدوياً + تسجيل الحجوزات + تذاكر الدعم + تقارير أساسية + صفحة الحجز العامة. مثالية للتنظيم وبناء الحضور الرقمي.',
+        },
+        {
+          title: 'إدارة العمليات — $119/شهر',
+          body: 'كل مميزات الحضور الرقمي + ربط القنوات (واتساب، إنستغرام، تيليجرام) + حجوزات ذكية من القنوات + تقارير متقدمة + مساعد الدردشة الذكي في صفحتك.',
+        },
+        {
+          title: 'التسويق والمحتوى — $199/شهر',
+          body: 'كل مميزات إدارة العمليات + أدوات تسويق + حملات تواصل مع العملاء + أدوات نمو لاستقطاب عملاء جدد والاحتفاظ بالحاليين.',
+        },
+        {
+          title: 'التجربة المجانية 14 يوماً',
+          body: 'كل الباقات تبدأ بتجربة مجانية 14 يوماً — بدون بطاقة ائتمان. استكشفي كل الميزات قبل الالتزام. ألغي في أي وقت قبل انتهاء التجربة ولن تتحملي أي تكلفة.',
+        },
+        {
+          title: 'الإلغاء',
+          body: 'ألغي في أي وقت من الفواتير ← إدارة الاشتراك. لا عقود ملزمة. بياناتك تبقى في حسابك — فقط تفقدين الوصول للميزات المدفوعة بعد نهاية دورة الفوترة.',
         },
       ],
     },
@@ -289,20 +355,20 @@ const DOCS = {
       title: 'حل المشكلات',
       steps: [
         {
-          title: 'الموظفة لا تردّ',
-          body: 'تحققي من: (١) الموظفة في وضع Active على لوحة التحكم. (٢) رصيد التوكن أعلى من صفر. (٣) القناة مربوطة — اذهبي إلى Connect Channel وتأكدي من حفظ بيانات الاتصال.',
-        },
-        {
           title: 'نسيان كلمة المرور',
           body: 'في صفحة تسجيل الدخول، اضغطي "نسيت كلمة المرور؟" تحت حقل الباسورد. أدخلي إيميلك وسيصلك رابط الاستعادة خلال دقائق. تحققي من البريد المزعج إذا لم يصل.',
         },
         {
-          title: 'واتساب لا يتصل',
-          body: 'تأكدي من استخدام بيانات Meta Business API (ليس واتساب العادي). الـ Phone ID والـ Access Token يجب أن يطابقا الرقم المسجل في Meta. الـ Tokens تنتهي — أعيدي توليدها من Meta Business إذا لزم.',
+          title: 'الخدمات لا تظهر في الصفحة العامة',
+          body: 'اذهب إلى إعدادات الصالون ← الخدمات وتأكد من إضافتها وحفظها. ثم اذهب إلى صفحة الصالون وتأكد أن خيار "عرض قائمة الخدمات" مفعّل. اضغط حفظ الصفحة.',
         },
         {
-          title: 'ردود الموظفة غير دقيقة',
-          body: 'اذهبي إلى Salon Setup ← Persona وحدّثي تعليمات الموظفة. كوني محددة: "أعطي الأسعار بالريال السعودي"، "لا تقبلي حجوزات الجمعة". كلما كانت التعليمات أوضح، كانت الردود أدق.',
+          title: 'الشعار أو الصورة لا يُرفع',
+          body: 'جرّبي ملفاً أصغر (أقل من 1MB للشعار، أقل من 3MB للغلاف). تُدعم صيغ JPG وPNG. إذا استمرت المشكلة، جرّبي متصفحاً مختلفاً.',
+        },
+        {
+          title: 'استيراد الإكسيل لا يعمل',
+          body: 'استخدمي القالب المحمّل من صفحة العملاء. لا تغيّري عناوين الأعمدة. احفظي الملف بصيغة .xlsx قبل الاستيراد. كل صف = عميلة واحدة.',
         },
       ],
     },
@@ -346,7 +412,7 @@ export default function HelpCenter() {
       <div style={{ position: 'relative', marginBottom: 32, maxWidth: 500 }}>
         <Search size={18} style={{
           position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-          [isAr ? 'right' : 'left']: 16, color: 'var(--text-muted)'
+          [isAr ? 'right' : 'left']: 16, color: 'var(--text-muted)',
         }} />
         <input
           type="text"
@@ -359,7 +425,7 @@ export default function HelpCenter() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 28, alignItems: 'start' }}>
-        {/* Sidebar nav */}
+        {/* Sidebar */}
         <div style={{
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 16, padding: 12, position: 'sticky', top: 24,
@@ -374,7 +440,7 @@ export default function HelpCenter() {
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                   padding: '10px 12px', borderRadius: 10, border: 'none',
-                  background: isActive ? `${section.color}15` : 'transparent',
+                  background: isActive ? `${section.color}18` : 'transparent',
                   color: isActive ? section.color : 'var(--text-muted)',
                   fontSize: 13, fontWeight: isActive ? 800 : 500,
                   cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start',
@@ -383,11 +449,12 @@ export default function HelpCenter() {
               >
                 <Icon size={15} />
                 {section.title}
+                {isActive && <ChevronRight size={13} style={{ marginInlineStart: 'auto', opacity: .6 }} />}
               </button>
             );
           })}
 
-          {/* Contact support */}
+          {/* Support CTA */}
           <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openConcierge'))}
@@ -409,7 +476,7 @@ export default function HelpCenter() {
         <div>
           {search && filtered.length === 0 ? (
             <div style={{ padding: 60, textAlign: 'center', background: 'var(--surface)', borderRadius: 20, border: '1px solid var(--border)' }}>
-              <Search size={40} style={{ opacity: 0.2, marginBottom: 12 }} />
+              <Search size={40} style={{ opacity: .2, marginBottom: 12 }} />
               <p style={{ color: 'var(--text-muted)' }}>
                 {isAr ? 'لا نتائج — جرّب كلمة أخرى' : 'No results — try a different term'}
               </p>
@@ -429,7 +496,7 @@ export default function HelpCenter() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 12,
-                  background: `${activeDoc.color}15`,
+                  background: `${activeDoc.color}18`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: activeDoc.color,
                 }}>
@@ -437,15 +504,15 @@ export default function HelpCenter() {
                 </div>
                 <h2 style={{ fontWeight: 900, fontSize: 22, margin: 0 }}>{activeDoc.title}</h2>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {activeDoc.steps.map((step, i) => <StepCard key={i} step={step} color={activeDoc.color} />)}
               </div>
 
               {/* Bottom CTA */}
               <div style={{
                 marginTop: 36, padding: '24px 28px', borderRadius: 16,
-                background: 'linear-gradient(135deg, rgba(217,70,239,0.08), rgba(147,51,234,0.04))',
-                border: '1px solid rgba(217,70,239,0.15)',
+                background: 'linear-gradient(135deg, rgba(217,70,239,0.07), rgba(147,51,234,0.03))',
+                border: '1px solid rgba(217,70,239,0.14)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
                 flexWrap: 'wrap',
               }}>
@@ -480,12 +547,11 @@ function StepCard({ step, color }) {
       padding: '20px 24px', borderRadius: 14,
       background: 'var(--surface)', border: '1px solid var(--border)',
       borderInlineStart: `3px solid ${color}`,
-      transition: 'border-color 0.2s',
     }}>
       <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 8, color: 'var(--text)' }}>
         {step.title}
       </div>
-      <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7 }}>
+      <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.75 }}>
         {step.body}
       </div>
     </div>

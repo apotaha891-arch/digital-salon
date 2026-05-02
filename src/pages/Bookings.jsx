@@ -2,10 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useBookings } from '../hooks/useBookings';
-import { 
-  Calendar, Clock, Phone, User, Scissors, CheckCircle, XCircle,
+import { useBusiness } from '../hooks/useBusiness';
+import { useCustomers } from '../hooks/useCustomers';
+import {
+  Calendar, Clock, Phone, Scissors, CheckCircle, XCircle,
   AlertCircle, CalendarCheck, CalendarX, Filter, ChevronLeft, ChevronRight,
-  MessageCircle, Send, Camera
+  MessageCircle, Send, Camera, Plus, X, Loader2, Search, UserPlus
 } from 'lucide-react';
 import Spinner from '../components/ui/Spinner';
 
@@ -26,12 +28,63 @@ const CHANNEL_ICONS = {
 
 const PAGE_SIZE = 8;
 
+const EMPTY_FORM = { clientName: '', clientPhone: '', serviceName: '', date: '', time: '' };
+
 export default function Bookings() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const { bookings, loading, updateStatus, filters, setFilters } = useBookings(user?.id);
+  const { bookings, loading, updateStatus, addBooking, filters, setFilters } = useBookings(user?.id);
+  const { business } = useBusiness(user?.id);
+  const { customers } = useCustomers(user?.id);
   const [page, setPage] = useState(0);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const isAr = i18n.language === 'ar';
+
+  const services = business?.services || [];
+
+  const filteredCustomers = customers.filter(c => {
+    if (!customerSearch.trim()) return true;
+    const q = customerSearch.toLowerCase();
+    return (c.full_name || '').toLowerCase().includes(q) || (c.phone || '').includes(q);
+  }).slice(0, 6);
+
+  const selectCustomer = (c) => {
+    setForm(p => ({ ...p, clientName: c.full_name, clientPhone: c.phone || p.clientPhone }));
+    setCustomerSearch(c.full_name);
+    setShowCustomerDropdown(false);
+  };
+
+  const handleAdd = async () => {
+    if (!form.clientName || !form.serviceName || !form.date || !form.time) {
+      setFormError(isAr ? 'يرجى تعبئة جميع الحقول المطلوبة' : 'Please fill all required fields');
+      return;
+    }
+    setSaving(true);
+    setFormError('');
+    try {
+      await addBooking({ ...form, channel: 'manual' });
+      setShowModal(false);
+      setForm(EMPTY_FORM);
+      setCustomerSearch('');
+    } catch (e) {
+      setFormError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setForm(EMPTY_FORM);
+    setCustomerSearch('');
+    setFormError('');
+    setShowCustomerDropdown(false);
+  };
 
   // Summary counts
   const counts = useMemo(() => {
@@ -59,6 +112,166 @@ export default function Bookings() {
 
   return (
     <div className="fade-in">
+
+      {/* Add Booking Modal */}
+      {showModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        }} onClick={e => { e.target === e.currentTarget && closeModal(); setShowCustomerDropdown(false); }}>
+          <div style={{
+            background: 'var(--surface)', borderRadius: 20, border: '1px solid var(--border)',
+            padding: 32, width: '100%', maxWidth: 480, animation: 'slideUp 0.2s ease',
+          }} onClick={() => setShowCustomerDropdown(false)}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontWeight: 900, fontSize: 18, margin: 0 }}>
+                {isAr ? '+ إضافة حجز يدوي' : '+ Add Manual Booking'}
+              </h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Customer Search Field */}
+              <div style={{ position: 'relative' }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  {isAr ? 'العميل *' : 'Customer *'}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} style={{ position: 'absolute', insetInlineStart: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    value={customerSearch}
+                    placeholder={isAr ? 'ابحث عن عميل أو اكتب اسماً جديداً...' : 'Search customer or type new name...'}
+                    onChange={e => {
+                      setCustomerSearch(e.target.value);
+                      setForm(p => ({ ...p, clientName: e.target.value }));
+                      setShowCustomerDropdown(true);
+                    }}
+                    onFocus={() => setShowCustomerDropdown(true)}
+                    className="form-input"
+                    style={{ width: '100%', boxSizing: 'border-box', paddingInlineStart: 36 }}
+                  />
+                </div>
+                {/* Dropdown */}
+                {showCustomerDropdown && customerSearch && filteredCustomers.length > 0 && (
+                  <div style={{
+                    position: 'absolute', top: '100%', insetInlineStart: 0, insetInlineEnd: 0, zIndex: 100,
+                    background: 'var(--surface)', border: '1px solid var(--border)',
+                    borderRadius: 12, marginTop: 4, overflow: 'hidden',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  }}>
+                    {filteredCustomers.map(c => (
+                      <div
+                        key={c.id}
+                        onClick={() => selectCustomer(c)}
+                        style={{
+                          padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+                          borderBottom: '1px solid var(--border)', transition: 'background 0.1s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(217,70,239,0.06)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <div style={{
+                          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: 'white', fontWeight: 900, fontSize: 13
+                        }}>
+                          {c.full_name?.charAt(0)?.toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 13 }}>{c.full_name}</div>
+                          {c.phone && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.phone}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Phone — auto-filled or manual */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  {isAr ? 'رقم الهاتف' : 'Phone Number'}
+                </label>
+                <input
+                  type="tel"
+                  value={form.clientPhone}
+                  placeholder="05xxxxxxxx"
+                  onChange={e => setForm(p => ({ ...p, clientPhone: e.target.value }))}
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* Date & Time */}
+              {[
+                { key: 'date', label: isAr ? 'تاريخ الموعد *' : 'Appointment Date *', type: 'date' },
+                { key: 'time', label: isAr ? 'وقت الموعد *'   : 'Appointment Time *', type: 'time' },
+              ].map(({ key, label, type }) => (
+                <div key={key}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>{label}</label>
+                  <input
+                    type={type}
+                    value={form[key]}
+                    onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                    className="form-input"
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
+                  {isAr ? 'الخدمة *' : 'Service *'}
+                </label>
+                {services.length > 0 ? (
+                  <select
+                    value={form.serviceName}
+                    onChange={e => setForm(p => ({ ...p, serviceName: e.target.value }))}
+                    className="form-input"
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  >
+                    <option value="">{isAr ? '— اختر الخدمة —' : '— Select Service —'}</option>
+                    {services.map((s, i) => (
+                      <option key={i} value={s.name || s}>{s.name || s}{s.price ? ` — ${s.price}` : ''}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={form.serviceName}
+                    placeholder={isAr ? 'قص شعر، صبغة...' : 'Haircut, Color...'}
+                    onChange={e => setForm(p => ({ ...p, serviceName: e.target.value }))}
+                    className="form-input"
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                  />
+                )}
+              </div>
+            </div>
+
+            {formError && (
+              <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#EF4444', fontSize: 12 }}>
+                {formError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+              <button onClick={closeModal} className="btn btn-secondary" style={{ flex: 1 }}>
+                {isAr ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button onClick={handleAdd} disabled={saving} className="btn btn-primary" style={{ flex: 2 }}>
+                {saving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : (isAr ? 'إضافة الحجز' : 'Add Booking')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
         <div>
@@ -68,8 +281,21 @@ export default function Bookings() {
           </h1>
           <p className="page-subtitle">{t('bookings.subtitle')}</p>
         </div>
-        {/* Date Filter */}
+        {/* Actions */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            onClick={() => setShowModal(true)}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
+          >
+            <Plus size={16} />
+            {isAr ? 'إضافة حجز' : 'Add Booking'}
+          </button>
+        </div>
+      </div>
+
+      {/* Date Filter */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
           <button
             onClick={() => setFilters({ ...filters, date: today })}
             style={{
@@ -101,7 +327,6 @@ export default function Bookings() {
               ✕
             </button>
           )}
-        </div>
       </div>
 
       {/* Status Filter Tabs */}

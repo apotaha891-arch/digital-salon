@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getCustomers, deleteCustomer } from '../services/customers';
+import { getCustomers, deleteCustomer, createCustomer, bulkCreateCustomers } from '../services/customers';
 
 export function useCustomers(userId) {
   const [customers, setCustomers] = useState([]);
@@ -32,11 +32,30 @@ export function useCustomers(userId) {
     }
   };
 
+  const addCustomer = async (details) => {
+    try {
+      const customer = await createCustomer(userId, details);
+      setCustomers(prev => [customer, ...prev]);
+      return customer;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const importCustomers = async (rows) => {
+    const created = await bulkCreateCustomers(userId, rows);
+    setCustomers(prev => [...created, ...prev]);
+    return created;
+  };
+
   return {
     customers,
     loading,
     error,
     refreshCustomers: loadCustomers,
-    removeCustomer
+    removeCustomer,
+    addCustomer,
+    importCustomers,
   };
 }

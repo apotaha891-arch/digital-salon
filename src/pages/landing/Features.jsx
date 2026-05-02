@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useInView } from '../../hooks/useInView';
 
 const FEATURES = [
-  { icon: '🤖', titleKey: 'landing.features.ai_title',      descKey: 'landing.features.ai_desc' },
-  { icon: '📅', titleKey: 'landing.features.booking_title', descKey: 'landing.features.booking_desc' },
-  { icon: '💬', titleKey: 'landing.features.multi_title',   descKey: 'landing.features.multi_desc' },
-  { icon: '🧠', titleKey: 'landing.features.memory_title',  descKey: 'landing.features.memory_desc' },
-  { icon: '📊', titleKey: 'landing.features.reports_title', descKey: 'landing.features.reports_desc' },
-  { icon: '🔋', titleKey: 'landing.features.tokens_title',  descKey: 'landing.features.tokens_desc' },
+  { icon: '👥', titleKey: 'landing.features.crm_title',      descKey: 'landing.features.crm_desc' },
+  { icon: '📅', titleKey: 'landing.features.booking_title',  descKey: 'landing.features.booking_desc' },
+  { icon: '💬', titleKey: 'landing.features.multi_title',    descKey: 'landing.features.multi_desc' },
+  { icon: '🎫', titleKey: 'landing.features.ticket_title',   descKey: 'landing.features.ticket_desc' },
+  { icon: '📊', titleKey: 'landing.features.reports_title',  descKey: 'landing.features.reports_desc' },
+  { icon: '🌐', titleKey: 'landing.features.presence_title', descKey: 'landing.features.presence_desc' },
 ];
 
 export default function Features() {

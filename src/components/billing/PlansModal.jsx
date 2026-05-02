@@ -4,9 +4,27 @@ import PricingCard from './PricingCard';
 import { createCheckoutSession } from '../../services/wallet';
 
 const FALLBACK_PLANS = [
-  { id: 'starter', name: 'Starter', name_ar: 'المبتدئ', price_usd: 29, monthly_tokens: 200, trial_days: 14, topup_price_per_token: 0.20, features: '["14-day free trial","200 AI tokens/mo","Rollover tokens","All channels","Bookings","CRM","Email support"]', features_ar: '["تجربة مجانية 14 يوم","200 رسالة/شهر","ترحيل الرسائل","جميع القنوات","حجوزات","إدارة عملاء","دعم بالإيميل"]' },
-  { id: 'pro', name: 'Pro', name_ar: 'الاحترافي', price_usd: 49, monthly_tokens: 400, trial_days: 14, topup_price_per_token: 0.15, features: '["14-day free trial","400 AI tokens/mo","Rollover tokens","All channels","Advanced bookings","CRM","Priority support","Analytics"]', features_ar: '["تجربة مجانية 14 يوم","400 رسالة/شهر","ترحيل الرسائل","جميع القنوات","حجوزات متقدمة","إدارة عملاء","دعم أولوية","تحليلات"]' },
-  { id: 'business', name: 'Business', name_ar: 'الأعمال', price_usd: 100, monthly_tokens: 400, trial_days: 14, topup_price_per_token: 0.10, features: '["14-day free trial","400 AI tokens/mo","All channels","Online payments","Stripe payouts","Priority support","Analytics","Custom AI"]', features_ar: '["تجربة مجانية 14 يوم","400 رسالة/شهر","جميع القنوات","دفع إلكتروني","تحويلات Stripe","دعم أولوية","تحليلات","AI مخصص"]' },
+  {
+    id: 'presence',
+    name: 'Digital Presence', name_ar: 'الحضور الرقمي',
+    price_usd: 39, trial_days: 14,
+    features: '["Professional salon landing page","Social media linking (WhatsApp, Instagram, Telegram)","Auto replies for common questions","Redirect customers to channels","Manual bookings management","Manual customer management","Manual support tickets"]',
+    features_ar: '["صفحة هبوط احترافية للصالون","ربط السوشيال ميديا (واتساب، انستقرام، تيليقرام)","ردود تلقائية على الأسئلة الشائعة","تحويل العملاء لقنوات التواصل","إدارة الحجوزات يدوياً","إدارة العملاء يدوياً","تذاكر دعم يدوية"]',
+  },
+  {
+    id: 'operations',
+    name: 'Operations', name_ar: 'إدارة العمليات',
+    price_usd: 119, trial_days: 14,
+    features: '["Everything in Digital Presence","Auto bookings from all channels","24/7 customer service","Automatic support tickets","Full customer database","Customer history & preferences","Appointment notifications","Bookings & customers reports"]',
+    features_ar: '["كل مميزات الحضور الرقمي","حجوزات تلقائية من جميع القنوات","خدمة عملاء 24/7","تذاكر دعم تلقائية","قاعدة بيانات العملاء الكاملة","تاريخ العميل وتفضيلاته","إشعارات وتذكيرات للمواعيد","تقارير الحجوزات والعملاء"]',
+  },
+  {
+    id: 'marketing',
+    name: 'Marketing & Content', name_ar: 'التسويق والمحتوى',
+    price_usd: 199, trial_days: 14,
+    features: '["Everything in Operations","Content creation (images & captions)","Schedule & publish on social media","Targeted marketing campaigns","Content performance reports","Monthly content strategy","Competitor analysis","Dedicated priority support"]',
+    features_ar: '["كل مميزات إدارة العمليات","إنتاج محتوى (صور وكابشن)","جدولة ونشر على السوشيال ميديا","حملات تسويقية موجهة","تقارير أداء المحتوى","استراتيجية محتوى شهرية","تحليل المنافسين","دعم أولوية مخصص"]',
+  },
 ];
 
 export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }) {
@@ -64,13 +82,13 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
                 <Zap size={20} color="white" />
               </div>
               <h2 style={{ margin: 0, fontWeight: 900, fontSize: 22 }}>
-                {isAr ? '🎉 إعدادك جاهز! فعّل موظفتك الآن' : '🎉 Setup complete! Activate your agent'}
+                {isAr ? '🎉 اختر الباقة المناسبة لصالونك' : '🎉 Choose the right plan for your salon'}
               </h2>
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
               {isAr
-                ? 'اختر باقتك وابدأ تجربتك المجانية 14 يوماً — لا تحتاج بطاقة ائتمان الآن'
-                : 'Choose your plan and start your 14-day free trial — no credit card needed now'}
+                ? 'ابدأ تجربتك المجانية 14 يوماً — لا تحتاج بطاقة ائتمان الآن'
+                : 'Start your 14-day free trial — no credit card needed now'}
             </p>
           </div>
           <button
@@ -102,8 +120,8 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
               plan={plan}
               isAr={isAr}
               isCurrentPlan={false}
-              isPopular={plan.id === 'pro'}
-              comingSoon={plan.id === 'business'}
+              isPopular={plan.id === 'operations'}
+              comingSoon={false}
               onSelect={handleSelect}
               loading={checkoutLoading === plan.id}
             />
@@ -120,7 +138,7 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
               fontFamily: 'inherit', textDecoration: 'underline',
             }}
           >
-            {isAr ? 'الاستمرار بالتجربة المجانية (100 رسالة)' : 'Continue with free trial (100 tokens)'}
+            {isAr ? 'الاستمرار بالتجربة المجانية' : 'Continue with free trial'}
           </button>
         </div>
       </div>
