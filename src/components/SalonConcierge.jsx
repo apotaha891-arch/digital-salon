@@ -185,11 +185,13 @@ export default function SalonConcierge({ lang = 'ar' }) {
             flexShrink: 0,
           }}>
             <div style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)',
+              width: 44, height: 44, borderRadius: 12,
+              background: 'rgba(255,255,255,0.15)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18, flexShrink: 0,
-            }}>💅</div>
+              flexShrink: 0, overflow: 'hidden', padding: 4,
+            }}>
+              <img src="/assets/logo_white.png" alt="Digital Salon" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
             <div style={{ flex: 1, color: 'white', minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 14 }}>
                 {isAr ? 'لين — مساعدة Digital Salon' : 'Lina — Digital Salon Assistant'}

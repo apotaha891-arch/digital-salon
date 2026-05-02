@@ -126,9 +126,7 @@ export default function AnimatedCRM() {
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#EF4444' }} />
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#F59E0B' }} />
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981' }} />
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginInlineStart: 8, fontWeight: 600 }}>
-          Digital Salon — {isAr ? 'لوحة التحكم' : 'Dashboard'}
-        </span>
+        <img src="/assets/logo_version.png" alt="Digital Salon" style={{ height: 22, width: 'auto', objectFit: 'contain', marginInlineStart: 8, opacity: 0.9 }} />
       </div>
 
       {/* Tab strip */}

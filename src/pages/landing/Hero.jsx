@@ -2,8 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import AnimatedChat from './AnimatedChat';
-
 export default function Hero() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -69,12 +67,19 @@ export default function Hero() {
             🌙 {t('landing.hero.badge_247')}
           </div>
 
-          <div className="ln-phone-frame">
-            <div className="ln-phone-notch">
-              <div className="ln-phone-notch-dot" />
-            </div>
-            <AnimatedChat minHeight={280} />
-          </div>
+          <img
+            src="/assets/logo_version.png"
+            alt="Digital Salon"
+            style={{
+              width: 280,
+              height: 'auto',
+              objectFit: 'contain',
+              position: 'relative',
+              zIndex: 1,
+              filter: 'drop-shadow(0 0 40px rgba(217,70,239,0.7)) drop-shadow(0 0 80px rgba(147,51,234,0.4))',
+              animation: 'sc-slide-up 0.6s ease',
+            }}
+          />
         </div>
       </div>
     </section>

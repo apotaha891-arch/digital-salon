@@ -25,7 +25,11 @@ export default function Navbar() {
   return (
     <nav className="ln-nav">
       <div className="ln-nav-inner">
-        <span className="ln-logo">💅 Digital Salon</span>
+        <img
+          src="/assets/logo_version.png"
+          alt="Digital Salon"
+          style={{ height: 38, width: 'auto', objectFit: 'contain' }}
+        />
 
         <div className="ln-nav-links">
           {links.map(l => (

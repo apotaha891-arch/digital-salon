@@ -4,7 +4,8 @@
       "Bash(npm install *)",
       "Bash(node --input-type=module --check)",
       "Bash(supabase functions *)",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "Bash(npx vite *)"
     ]
   }
 }

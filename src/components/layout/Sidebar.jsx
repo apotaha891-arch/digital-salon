@@ -31,8 +31,13 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
     { to: '/dashboard',  icon: LayoutDashboard, label: t('common.dashboard') },
     { to: '/bookings',   icon: CalendarCheck,   label: t('common.bookings') },
     { to: '/customers',  icon: Users,           label: t('common.customers') },
-    { to: '/setup',      icon: Settings,        label: t('common.setup') },
-    { to: '/billing',    icon: CreditCard,      label: t('common.billing') },
+    { to: '/tickets',    icon: MessageSquare,   label: t('common.tickets') },
+  ];
+
+  const settingsNav = [
+    { to: '/setup',    icon: Settings,    label: t('common.setup') },
+    { to: '/billing',  icon: CreditCard,  label: t('common.billing') },
+    { to: '/help',     icon: HelpCircle,  label: t('common.help') },
   ];
 
   const adminNav = [
@@ -56,8 +61,12 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
 
   return (
     <aside className="sidebar">
-      <div className="nav-logo">
-        {SECTOR.agent.avatar} {i18n.language === 'ar' ? SECTOR.name_ar : SECTOR.name}
+      <div className="nav-logo" style={{ padding: '14px 12px 10px' }}>
+        <img
+          src={theme === 'dark' ? '/assets/logo_version.png' : '/assets/logo_Original.png'}
+          alt="Digital Salon"
+          style={{ width: '100%', height: 'auto', objectFit: 'contain', display: 'block' }}
+        />
       </div>
 
       {isAdmin && (
@@ -67,6 +76,7 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
       )}
 
       <nav style={{ flex: 1 }}>
+        {/* Main CRM nav */}
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, padding: '0 16px' }}>
           {t('sidebar.main')}
         </div>
@@ -83,20 +93,23 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
           </NavLink>
         ))}
 
+        {/* Settings section (client only) */}
         {!isAdmin && (
           <>
             <div className="divider" style={{ margin: '16px 0' }} />
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8, padding: '0 16px' }}>
-              {t('sidebar.support')}
+              {i18n.language === 'ar' ? 'الإعدادات' : 'SETTINGS'}
             </div>
-            <NavLink to="/tickets" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <MessageSquare size={18} />
-              {t('common.tickets')}
-            </NavLink>
-            <NavLink to="/help" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <HelpCircle size={18} />
-              {t('common.help')}
-            </NavLink>
+            {settingsNav.map(({ to, icon: Icon, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              >
+                <Icon size={18} />
+                {label}
+              </NavLink>
+            ))}
           </>
         )}
 

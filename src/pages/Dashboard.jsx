@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useBusiness } from '../hooks/useBusiness';
-import { useIntegrations } from '../hooks/useIntegrations';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { Plug, CreditCard, Settings, MessageSquare, CalendarCheck, Users, Zap, X } from 'lucide-react';
+import { CreditCard, Settings, MessageSquare, CalendarCheck, Users, Zap, X } from 'lucide-react';
 
 import StatCard from '../components/ui/StatCard';
 import Spinner from '../components/ui/Spinner';
@@ -19,31 +18,20 @@ export default function Dashboard() {
   const isAr = i18n.language === 'ar';
 
   const { business, loading: bLoading } = useBusiness(user?.id);
-  const { integrations, loading: iLoading } = useIntegrations(user?.id);
   const { stats, loading: sLoading } = useDashboardStats(user?.id);
   const { subscription, plans } = useSubscription(user?.id);
   const [showPlans, setShowPlans] = useState(false);
   const [hideBanner, setHideBanner] = useState(false);
 
-  const loading = bLoading || iLoading || sLoading;
+  const loading = bLoading || sLoading;
 
   if (loading) return <Spinner centered />;
 
-  const activeChannels = integrations.filter(i => {
-    if (!i.is_active) return false;
-    if (i.provider === 'facebook' || i.provider === 'instagram')
-      return !!i.config?.page_id && !!i.config?.access_token;
-    if (i.provider === 'telegram') return !!i.config?.token;
-    if (i.provider === 'whatsapp') return !!i.config?.token && !!i.config?.phone_id;
-    if (i.provider === 'widget')   return !!i.config?.domain;
-    return true;
-  }).length;
-
   // Setup progress
   const setupSteps = [
-    { label: isAr ? 'بيانات الصالون' : 'Salon Info',   done: !!(business?.name && business?.phone) },
-    { label: isAr ? 'الخدمات'        : 'Services',      done: (business?.services?.length || 0) > 0 },
-    { label: isAr ? 'ربط قناة'        : 'Channel',       done: activeChannels > 0 },
+    { label: isAr ? 'بيانات الصالون' : 'Salon Info',  done: !!(business?.name && business?.phone) },
+    { label: isAr ? 'الخدمات'        : 'Services',     done: (business?.services?.length || 0) > 0 },
+    { label: isAr ? 'صفحة الصالون'   : 'Salon Page',   done: !!(business?.metadata?.page?.tagline || business?.metadata?.page?.logo_url) },
   ];
   const completedSteps = setupSteps.filter(s => s.done).length;
   const progressPercent = Math.round((completedSteps / setupSteps.length) * 100);
@@ -157,46 +145,23 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="stats-grid" style={{ marginBottom: 28 }}>
-        <StatCard label={isAr ? 'حجوزات اليوم' : 'Today\'s Bookings'} value={stats.bookingsToday} icon={CalendarCheck} />
-        <StatCard label={isAr ? 'إجمالي الحجوزات' : 'Total Bookings'}  value={stats.messagesToday}  icon={CalendarCheck} />
-        <StatCard label={isAr ? 'القنوات المتصلة' : 'Connected Channels'} value={activeChannels} icon={Plug} />
-        <StatCard label={isAr ? 'العملاء' : 'Customers'} value={stats.bookingsToday} icon={Users} />
+        <StatCard label={isAr ? 'حجوزات اليوم'    : "Today's Bookings"} value={stats.bookingsToday}  icon={CalendarCheck} />
+        <StatCard label={isAr ? 'إجمالي الحجوزات' : 'Total Bookings'}   value={stats.messagesToday}  icon={CalendarCheck} />
+        <StatCard label={isAr ? 'العملاء'          : 'Customers'}        value={stats.customersTotal ?? 0} icon={Users} />
+        <StatCard label={isAr ? 'التذاكر المفتوحة' : 'Open Tickets'}     value={stats.openTickets   ?? 0} icon={MessageSquare} />
       </div>
-
-      {/* No Channels CTA */}
-      {activeChannels === 0 && (
-        <div className="card" style={{
-          borderLeft: '4px solid var(--warning)',
-          background: 'linear-gradient(to right, rgba(245,158,11,0.05), transparent)',
-          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28
-        }}>
-          <Plug size={20} style={{ color: 'var(--warning)', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>
-              {isAr ? 'لم تربط أي قناة بعد' : 'No channels connected yet'}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {isAr ? 'اربط واتساب أو تيليقرام لاستقبال الحجوزات تلقائياً' : 'Connect WhatsApp or Telegram to receive bookings automatically'}
-            </div>
-          </div>
-          <button className="btn btn-primary" style={{ fontSize: 13, flexShrink: 0 }} onClick={() => navigate('/integrations')}>
-            {isAr ? 'ربط الآن ←' : 'Connect Now →'}
-          </button>
-        </div>
-      )}
 
       {/* Quick Actions */}
       <div className="page-header">
         <h2 style={{ fontSize: 18, fontWeight: 700 }}>{isAr ? 'إجراءات سريعة' : 'Quick Actions'}</h2>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
         {[
-          { icon: CalendarCheck, label: isAr ? 'الحجوزات'    : 'Bookings',    sub: isAr ? 'إدارة وإضافة الحجوزات'   : 'Manage & add bookings',   to: '/bookings',     color: 'var(--primary)' },
-          { icon: MessageSquare, label: isAr ? 'تذاكر الدعم'  : 'Support',     sub: isAr ? 'متابعة الشكاوي والطلبات' : 'Follow up on tickets',     to: '/tickets',      color: '#8B5CF6' },
-          { icon: Users,         label: isAr ? 'العملاء'       : 'Customers',   sub: isAr ? 'قاعدة بيانات العملاء'    : 'Customer database',        to: '/customers',    color: '#10B981' },
-          { icon: Settings,      label: isAr ? 'الإعدادات'    : 'Settings',    sub: isAr ? 'بيانات الصالون والخدمات'  : 'Salon info & services',    to: '/setup',        color: 'var(--warning)' },
-          { icon: Plug,          label: isAr ? 'القنوات'       : 'Channels',    sub: isAr ? 'ربط وإدارة قنوات التواصل' : 'Connect social channels',  to: '/integrations', color: '#F59E0B' },
-          { icon: CreditCard,    label: isAr ? 'الاشتراك'     : 'Billing',     sub: isAr ? 'إدارة باقتك واشتراكك'    : 'Manage your subscription', to: '/billing',      color: '#EF4444' },
+          { icon: CalendarCheck, label: isAr ? 'الحجوزات'     : 'Bookings',       sub: isAr ? 'إدارة وإضافة الحجوزات'    : 'Manage & add bookings',    to: '/bookings',  color: 'var(--primary)' },
+          { icon: Users,         label: isAr ? 'العملاء'        : 'Customers',      sub: isAr ? 'قاعدة بيانات العملاء'     : 'Your client database',     to: '/customers', color: '#10B981' },
+          { icon: MessageSquare, label: isAr ? 'تذاكر الدعم'   : 'Support Tickets', sub: isAr ? 'متابعة الشكاوي والطلبات'  : 'Follow up on requests',    to: '/tickets',   color: '#8B5CF6' },
+          { icon: Settings,      label: isAr ? 'إعدادات الصالون': 'Salon Setup',    sub: isAr ? 'بيانات الصالون والخدمات'   : 'Info, services & page',    to: '/setup',     color: 'var(--warning)' },
+          { icon: CreditCard,    label: isAr ? 'الاشتراك'       : 'Billing',         sub: isAr ? 'إدارة باقتك واشتراكك'     : 'Manage your subscription', to: '/billing',   color: '#EF4444' },
         ].map(({ icon: Icon, label, sub, to, color }) => (
           <div
             key={to}

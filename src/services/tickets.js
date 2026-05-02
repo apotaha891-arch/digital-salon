@@ -20,7 +20,6 @@ export const createTicket = async (userId, { clientName, clientPhone, subject, m
       subject,
       message,
       status: 'open',
-      channel: 'manual',
     })
     .select()
     .single();

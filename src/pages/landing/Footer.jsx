@@ -10,7 +10,7 @@ export default function Footer() {
     <footer className="ln-footer">
       <div className="ln-footer-inner">
         <div className="ln-footer-left">
-          <span className="ln-footer-logo">💅 Digital Salon</span>
+          <img src="/assets/logo_version.png" alt="Digital Salon" className="ln-footer-logo" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
           <span className="ln-footer-copy">{t('landing.footer.tagline')}</span>
         </div>
 

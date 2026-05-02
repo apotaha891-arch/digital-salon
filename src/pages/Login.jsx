@@ -57,14 +57,31 @@ export default function Login() {
     <div className="auth-page">
       <FloatingSettings />
 
+      {/* Back to home */}
+      <button
+        onClick={() => navigate('/')}
+        style={{
+          position: 'fixed', top: 20, insetInlineStart: 24,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 10, padding: '8px 16px',
+          display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 13, fontWeight: 600, color: 'var(--text-muted)',
+          cursor: 'pointer', fontFamily: 'inherit',
+          zIndex: 100,
+        }}
+      >
+        {isAr ? '→ الرئيسية' : '← Home'}
+      </button>
+
       <div className="auth-card card-glass">
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 52, marginBottom: 12 }}>{SECTOR.agent.avatar}</div>
-          <h1 className="auth-title">
-            {isAr ? SECTOR.name_ar : SECTOR.name}
-          </h1>
-          <p className="auth-subtitle">
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <img
+            src="/assets/logo_Pink.png"
+            alt="Digital Salon"
+            style={{ width: '60%', height: 'auto', objectFit: 'contain', marginBottom: 6 }}
+          />
+          <p className="auth-subtitle" style={{ marginBottom: 0, fontSize: 13 }}>
             {isAr ? SECTOR.tagline : SECTOR.tagline_en}
           </p>
         </div>
@@ -206,11 +223,6 @@ export default function Login() {
               </button>
             </form>
 
-            {isSignup && (
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, marginTop: 16 }}>
-                {t('auth.signup_bonus')}
-              </p>
-            )}
           </>
         )}
       </div>

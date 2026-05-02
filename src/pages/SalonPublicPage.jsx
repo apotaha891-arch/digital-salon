@@ -321,7 +321,9 @@ export default function SalonPublicPage() {
             ? <div className="pa d1 float" style={{ width:120, height:120, borderRadius:'50%', margin:'0 auto 32px', border:`3px solid rgba(${rgb},.5)`, overflow:'hidden', boxShadow:`0 0 0 8px rgba(${rgb},.08),0 0 60px rgba(${rgb},.4)` }}>
                 <img src={page.logo_url} alt="logo" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
               </div>
-            : <div className="pa d1 float" style={{ fontSize:80, marginBottom:28, filter:`drop-shadow(0 0 32px rgba(${rgb},.75))` }}>💅</div>}
+            : <div className="pa d1 float" style={{ marginBottom:28, display:'flex', justifyContent:'center' }}>
+                <img src="/assets/logo_white.png" alt="Digital Salon" style={{ height:100, width:'auto', objectFit:'contain', filter:`drop-shadow(0 0 32px rgba(${rgb},.75))` }} />
+              </div>}
 
           <h1 className="pa d2" style={{ fontWeight:900, fontSize:'clamp(36px,8vw,68px)', lineHeight:1.05, marginBottom:18, color: page.hero_url ? '#fff' : (isLight ? t.text : '#F5F0FF'), textShadow: page.hero_url ? '0 4px 20px rgba(0,0,0,.5)' : `0 0 60px rgba(${rgb},.35)`, letterSpacing:'-1px' }}>
             {business?.name || L.salon}
@@ -544,7 +546,9 @@ function ChatWidget({ businessId, t, rgb, isLight, isAr, onClose, businessName, 
       {/* Header */}
       <div style={{ background:headerBg, padding:'16px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>💅</div>
+          <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:4 }}>
+              <img src="/assets/logo_white.png" alt="logo" style={{ width:'100%', height:'100%', objectFit:'contain' }} />
+            </div>
           <div>
             <div style={{ fontWeight:800, fontSize:14, color:'#fff' }}>{businessName}</div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,.7)', display:'flex', alignItems:'center', gap:4 }}>
