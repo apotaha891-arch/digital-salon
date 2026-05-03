@@ -57,12 +57,21 @@ export default function SalonPublicPage() {
   const isAr = lang === 'ar';
 
   useEffect(() => {
-    supabase.from('businesses').select('*').eq('id', businessId).maybeSingle()
-      .then(({ data, error }) => {
-        if (error || !data) setNotFound(true);
-        else setBusiness(data);
-        setLoading(false);
-      });
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(businessId);
+    const lookup = isUuid
+      ? supabase.from('businesses').select('*').eq('id', businessId).maybeSingle()
+      : supabase.from('businesses').select('*').filter('metadata->>slug', 'eq', businessId).maybeSingle();
+
+    lookup.then(async ({ data, error }) => {
+      if (!error && data) { setBusiness(data); setLoading(false); return; }
+      // fallback: try the other method
+      if (!isUuid) {
+        const { data: d2 } = await supabase.from('businesses').select('*').eq('id', businessId).maybeSingle();
+        if (d2) { setBusiness(d2); setLoading(false); return; }
+      }
+      setNotFound(true);
+      setLoading(false);
+    });
   }, [businessId]);
 
   useEffect(() => {

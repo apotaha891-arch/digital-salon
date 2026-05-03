@@ -5,11 +5,18 @@ import { createCheckoutSession } from '../../services/wallet';
 
 const FALLBACK_PLANS = [
   {
+    id: 'free',
+    name: 'Free', name_ar: 'مجاني',
+    price_usd: 0, trial_days: 0,
+    features: '["Customized landing page template","Salon link (digitalsalon.website/your-name)","Social media accounts linking","Auto replies for common questions","Manual bookings management","Manual customer management","Support tickets"]',
+    features_ar: '["قالب صفحة هبوط مخصص للصالون","رابط صالون جاهز (digitalsalon.website/اسمك)","ربط حسابات السوشيال ميديا","ردود تلقائية على الأسئلة الشائعة","إدارة الحجوزات يدوياً","إدارة العملاء يدوياً","تذاكر الدعم"]',
+  },
+  {
     id: 'presence',
     name: 'Digital Presence', name_ar: 'الحضور الرقمي',
     price_usd: 39, trial_days: 14,
-    features: '["Professional salon landing page","Social media linking (WhatsApp, Instagram, Telegram)","Auto replies for common questions","Redirect customers to channels","Manual bookings management","Manual customer management","Manual support tickets"]',
-    features_ar: '["صفحة هبوط احترافية للصالون","ربط السوشيال ميديا (واتساب، انستقرام، تيليقرام)","ردود تلقائية على الأسئلة الشائعة","تحويل العملاء لقنوات التواصل","إدارة الحجوزات يدوياً","إدارة العملاء يدوياً","تذاكر دعم يدوية"]',
+    features: '["Everything in Free +","Use your own website","Or request a special custom design","Fresha booking link integration","Manual bookings management","Manual customer management","Manual support tickets"]',
+    features_ar: '["كل مميزات الباقة المجانية +","استخدم موقعك الإلكتروني الخاص","أو اطلب تصميماً خاصاً احترافياً","ربط حجوزات فريشا (Fresha)","إدارة الحجوزات يدوياً","إدارة العملاء يدوياً","تذاكر دعم يدوية"]',
   },
   {
     id: 'operations',
@@ -36,6 +43,7 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
   const displayPlans = plans.length > 0 ? plans : FALLBACK_PLANS;
 
   const handleSelect = async (plan) => {
+    if (plan.price_usd === 0) { onClose(); return; }
     setError('');
     try {
       setCheckoutLoading(plan.id);
@@ -64,7 +72,7 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
       <div style={{
         background: 'var(--surface)', borderRadius: 24,
         border: '1px solid var(--border)',
-        width: '100%', maxWidth: 900,
+        width: '100%', maxWidth: 1200,
         maxHeight: '90vh', overflowY: 'auto',
         padding: '36px 32px',
         animation: 'slideUp 0.3s ease',
@@ -87,8 +95,8 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
               {isAr
-                ? 'ابدأ تجربتك المجانية 14 يوماً — لا تحتاج بطاقة ائتمان الآن'
-                : 'Start your 14-day free trial — no credit card needed now'}
+                ? 'الباقات المدفوعة تشمل 14 يوم تجربة مجانية — لا تحتاج بطاقة ائتمان'
+                : 'Paid plans include a 14-day free trial — no credit card required'}
             </p>
           </div>
           <button
@@ -113,7 +121,7 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
         )}
 
         {/* Plans Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, alignItems: 'stretch' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'stretch' }}>
           {displayPlans.map(plan => (
             <PricingCard
               key={plan.id}
@@ -138,7 +146,7 @@ export default function PlansModal({ isOpen, onClose, userId, isAr, plans = [] }
               fontFamily: 'inherit', textDecoration: 'underline',
             }}
           >
-            {isAr ? 'الاستمرار بالتجربة المجانية' : 'Continue with free trial'}
+            {isAr ? 'الاستمرار بالباقة المجانية' : 'Continue with Free Plan'}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   HelpCircle, X, Check, Copy, Send, MessageCircle, Globe,
   ExternalLink, AlertTriangle, Info, ChevronDown
 } from 'lucide-react';

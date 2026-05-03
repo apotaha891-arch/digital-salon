@@ -34,6 +34,7 @@ const EMPTY_FORM = { clientName: '', clientPhone: '', serviceName: '', date: '',
 export default function Bookings() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
+  const isAr = i18n.language === 'ar';
   const { bookings, loading, updateStatus, addBooking, filters, setFilters } = useBookings(user?.id);
   const { business } = useBusiness(user?.id);
   const { customers } = useCustomers(user?.id);
@@ -45,7 +46,6 @@ export default function Bookings() {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-  const isAr = i18n.language === 'ar';
 
   const services = business?.services || [];
   const activeStaff = staff.filter(s => s.is_active !== false);
@@ -254,8 +254,8 @@ export default function Bookings() {
                     style={{ width: '100%', boxSizing: 'border-box' }}
                   >
                     <option value="">{isAr ? '— اختر الخدمة —' : '— Select Service —'}</option>
-                    {services.map((s, i) => (
-                      <option key={i} value={s.name || s}>{s.name || s}{s.price ? ` — ${s.price}` : ''}</option>
+                    {services.filter(s => s?.name?.trim()).map((s, i) => (
+                      <option key={i} value={s.name}>{s.name}{s.price ? ` — ${s.price}` : ''}</option>
                     ))}
                   </select>
                 ) : (

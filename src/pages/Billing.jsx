@@ -77,15 +77,21 @@ export default function Billing() {
     if (user?.id) loadData();
   }, [user?.id]);
 
-  const NEW_PLAN_IDS = ['presence', 'operations', 'marketing'];
+  const NEW_PLAN_IDS = ['free', 'presence', 'operations', 'marketing'];
   const newPlans = plans.filter(p => NEW_PLAN_IDS.includes(p.id));
 
   const displayPlans = newPlans.length > 0 ? newPlans : [
     {
+      id: 'free', name: 'Free', name_ar: 'مجاني',
+      price_usd: 0, trial_days: 0,
+      features: '["Customized landing page template","Salon link (digitalsalon.website/your-name)","Social media accounts linking","Auto replies for common questions","Manual bookings management","Manual customer management","Support tickets"]',
+      features_ar: '["قالب صفحة هبوط مخصص للصالون","رابط صالون جاهز (digitalsalon.website/اسمك)","ربط حسابات السوشيال ميديا","ردود تلقائية على الأسئلة الشائعة","إدارة الحجوزات يدوياً","إدارة العملاء يدوياً","تذاكر الدعم"]',
+    },
+    {
       id: 'presence', name: 'Digital Presence', name_ar: 'الحضور الرقمي',
       price_usd: 39, trial_days: 14,
-      features: '["Professional salon landing page","Social media linking (WhatsApp, Instagram, Telegram)","Auto replies for common questions","Redirect customers to channels","Manual bookings management","Manual customer management","Manual support tickets"]',
-      features_ar: '["صفحة هبوط احترافية للصالون","ربط السوشيال ميديا (واتساب، انستقرام، تيليقرام)","ردود تلقائية على الأسئلة الشائعة","تحويل العملاء لقنوات التواصل","إدارة الحجوزات يدوياً","إدارة العملاء يدوياً","تذاكر دعم يدوية"]',
+      features: '["Everything in Free +","Use your own website","Or request a special custom design","Fresha booking link integration","Manual bookings management","Manual customer management","Manual support tickets"]',
+      features_ar: '["كل مميزات الباقة المجانية +","استخدم موقعك الإلكتروني الخاص","أو اطلب تصميماً خاصاً احترافياً","ربط حجوزات فريشا (Fresha)","إدارة الحجوزات يدوياً","إدارة العملاء يدوياً","تذاكر دعم يدوية"]',
     },
     {
       id: 'operations', name: 'Operations', name_ar: 'إدارة العمليات',
@@ -122,6 +128,7 @@ export default function Billing() {
   }, [ledger]);
 
   const handleSelectPlan = async (plan) => {
+    if (plan.price_usd === 0) return;
     try {
       setCheckoutLoading(plan.id);
       const result = await createCheckoutSession('subscription', {
@@ -276,8 +283,8 @@ export default function Billing() {
       {activeTab === 'plans' && (
         <div>
           {plansLoading ? <Spinner centered /> : (
-            <div style={{ 
-              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20,
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16,
               alignItems: 'stretch'
             }}>
               {displayPlans.map(plan => (

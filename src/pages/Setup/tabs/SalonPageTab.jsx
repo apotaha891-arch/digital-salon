@@ -52,8 +52,21 @@ const DEFAULT_PAGE = {
   show_booking_btn: true,
   show_contact: true,
   booking_link: '',
+  slug: '',
   socials: { instagram: '', snapchat: '', tiktok: '', twitter: '', whatsapp: '', facebook: '' },
 };
+
+const PUBLIC_DOMAIN = 'https://digitalsalon.website';
+
+function toSlug(name = '') {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')   // ASCII only — no Arabic
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
 
 const SOCIAL_FIELDS = [
   { key: 'instagram', icon: '📷', label_ar: 'إنستغرام',  label_en: 'Instagram',  placeholder: '@handle' },
@@ -84,7 +97,9 @@ export default function SalonPageTab() {
     }
   }, [business]);
 
-  const publicUrl = business?.id ? `${window.location.origin}/s/${business.id}` : '';
+  const autoSlug = toSlug(business?.metadata?.name_en || business?.name_en || business?.name || '');
+  const slug = page.slug || autoSlug;
+  const publicUrl = slug ? `${PUBLIC_DOMAIN}/${slug}` : '';
 
   const handleCopy = () => {
     if (!publicUrl) return;
@@ -130,10 +145,13 @@ export default function SalonPageTab() {
 
   const handleSave = async () => {
     try {
+      const autoSlug = page.slug || toSlug(business?.metadata?.name_en || business?.name_en || business?.name || '');
+      const pageWithSlug = { ...page, slug: autoSlug };
       await updateBusiness({
         ...business,
-        metadata: { ...(business?.metadata || {}), page },
+        metadata: { ...(business?.metadata || {}), slug: autoSlug, page: pageWithSlug },
       });
+      setPage(pageWithSlug);
       setSuccess(isAr ? 'تم حفظ صفحة الصالون ✨' : 'Salon page saved ✨');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -153,34 +171,61 @@ export default function SalonPageTab() {
 
         {/* Public URL */}
         <div style={{ padding: 20, borderRadius: 16, background: 'rgba(217,70,239,0.05)', border: '1px solid rgba(217,70,239,0.15)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <Globe size={16} style={{ color: 'var(--primary)' }} />
             <span style={{ fontWeight: 800, fontSize: 13 }}>{isAr ? 'رابط صفحتك العامة' : 'Your Public Page URL'}</span>
           </div>
-          {publicUrl ? (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <div style={{
-                flex: 1, padding: '9px 14px', borderRadius: 10,
-                background: 'var(--surface2)', border: '1px solid var(--border)',
-                fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden',
-                textOverflow: 'ellipsis', whiteSpace: 'nowrap', direction: 'ltr',
-              }}>
-                {publicUrl}
-              </div>
-              <button onClick={handleCopy} className="btn btn-secondary" style={{ flexShrink: 0, padding: '9px 14px', fontSize: 12, gap: 6 }}>
-                {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? (isAr ? 'تم!' : 'Copied!') : (isAr ? 'نسخ' : 'Copy')}
-              </button>
-              <a href={publicUrl} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ flexShrink: 0, padding: '9px 14px', fontSize: 12, textDecoration: 'none' }}>
-                <Eye size={14} />
-                {isAr ? 'معاينة' : 'Preview'}
-              </a>
+
+          {/* Slug customizer */}
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: 5 }}>
+              {isAr ? 'اسم الرابط (إنجليزي فقط)' : 'URL name (English only)'}
+            </label>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 0,
+              background: 'var(--surface2)', borderRadius: 10,
+              border: `1px solid ${!slug ? 'rgba(239,68,68,0.5)' : 'var(--border)'}`,
+              overflow: 'hidden'
+            }}>
+              <span style={{ padding: '9px 10px', fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', borderRight: '1px solid var(--border)', direction: 'ltr' }}>
+                digitalsalon.website/
+              </span>
+              <input
+                type="text"
+                value={page.slug || autoSlug}
+                onChange={e => setPage(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-') }))}
+                placeholder={autoSlug || (isAr ? 'my-salon' : 'my-salon')}
+                dir="ltr"
+                style={{ flex: 1, border: 'none', background: 'transparent', padding: '9px 12px', fontSize: 12, color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }}
+              />
             </div>
-          ) : (
-            <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {isAr ? 'احفظ بيانات الصالون أولاً لتظهر الرابط' : 'Save salon info first to generate your link'}
-            </p>
-          )}
+            {!slug && (
+              <p style={{ fontSize: 11, color: '#EF4444', marginTop: 5 }}>
+                {isAr
+                  ? '⚠️ أدخل اسم الصالون بالإنجليزي في تبويب "بيانات الصالون" لتفعيل الرابط'
+                  : '⚠️ Enter your salon\'s English name in the "Business Info" tab to activate your link'}
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{
+              flex: 1, padding: '9px 14px', borderRadius: 10,
+              background: 'var(--surface2)', border: '1px solid var(--border)',
+              fontSize: 12, color: 'var(--primary)', overflow: 'hidden',
+              textOverflow: 'ellipsis', whiteSpace: 'nowrap', direction: 'ltr', fontWeight: 600,
+            }}>
+              {publicUrl || (isAr ? '⚠️ أدخل الاسم الإنجليزي أولاً' : '⚠️ Enter English name first')}
+            </div>
+            <button onClick={handleCopy} className="btn btn-secondary" style={{ flexShrink: 0, padding: '9px 14px', fontSize: 12, gap: 6 }}>
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? (isAr ? 'تم!' : 'Copied!') : (isAr ? 'نسخ' : 'Copy')}
+            </button>
+            <a href={slug ? `/s/${slug}` : `/s/${business?.id}`} target="_blank" rel="noreferrer" className="btn btn-secondary" style={{ flexShrink: 0, padding: '9px 14px', fontSize: 12, textDecoration: 'none' }}>
+              <Eye size={14} />
+              {isAr ? 'معاينة' : 'Preview'}
+            </a>
+          </div>
         </div>
 
         {/* Appearance Mode */}
@@ -342,11 +387,23 @@ export default function SalonPageTab() {
           </div>
           <div>
             <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>
-              {isAr ? 'رابط الحجز (اختياري)' : 'Booking Link (optional)'}
+              {isAr ? 'رابط الحجز' : 'Booking Link'}
             </label>
             <input type="url" value={page.booking_link} onChange={e => setPage(p => ({ ...p, booking_link: e.target.value }))}
-              placeholder="https://wa.me/966xxxxxxxx"
+              placeholder="https://fresha.com/book/your-salon  or  https://wa.me/966xxxxxxxx"
               className="form-input" style={{ width: '100%', boxSizing: 'border-box', direction: 'ltr' }} />
+            <div style={{
+              marginTop: 8, padding: '8px 12px', borderRadius: 10,
+              background: 'rgba(0,184,169,0.07)', border: '1px solid rgba(0,184,169,0.25)',
+              display: 'flex', alignItems: 'flex-start', gap: 8,
+            }}>
+              <span style={{ fontSize: 14, flexShrink: 0 }}>🟢</span>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
+                {isAr
+                  ? 'الصق رابط صفحة الحجز من فريشا (fresha.com) وسيتحول زر "احجزي موعدك" مباشرة إلى صفحتك على فريشا.'
+                  : 'Paste your Fresha booking page URL (fresha.com) and the "Book Now" button will link directly to your Fresha page.'}
+              </p>
+            </div>
           </div>
         </div>
 

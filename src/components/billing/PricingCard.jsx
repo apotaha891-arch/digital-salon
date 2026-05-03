@@ -2,15 +2,17 @@ import React from 'react';
 import { Check, Zap, Star, Crown, Building2, Loader2 } from 'lucide-react';
 
 const PLAN_ICONS = {
-  presence: Star,
+  free:      Zap,
+  presence:  Star,
   operations: Crown,
   marketing: Building2,
-  starter: Star,
-  pro: Crown,
-  business: Building2,
+  starter:   Star,
+  pro:       Crown,
+  business:  Building2,
 };
 
 const PLAN_COLORS = {
+  free:       { primary: '#10B981', gradient: 'linear-gradient(135deg, #10B981, #34D399)' },
   presence:   { primary: '#3B82F6', gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)' },
   operations: { primary: '#D946EF', gradient: 'linear-gradient(135deg, #D946EF, #A855F7)' },
   marketing:  { primary: '#F59E0B', gradient: 'linear-gradient(135deg, #F59E0B, #EAB308)' },
@@ -136,8 +138,8 @@ export default function PricingCard({
 
       {/* CTA Button */}
       <button
-        onClick={() => !disabled && !comingSoon && !loading && onSelect?.(plan)}
-        disabled={disabled || isCurrentPlan || comingSoon || loading}
+        onClick={() => !disabled && !comingSoon && !loading && !isCurrentPlan && onSelect?.(plan)}
+        disabled={disabled || isCurrentPlan || comingSoon || loading || plan.price_usd === 0}
         style={{
           width: '100%', padding: '12px 20px', borderRadius: 14,
           border: 'none', fontFamily: 'inherit',
@@ -155,12 +157,14 @@ export default function PricingCard({
         {loading
           ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
           : isCurrentPlan
-            ? (isAr ? '✓ خطتك الحالية' : '✓ Current Plan')
+            ? (isAr ? '✓ باقتك الحالية' : '✓ Current Plan')
             : comingSoon
               ? (isAr ? '🔜 قريباً' : '🔜 Coming Soon')
-              : plan.trial_days > 0
-                ? (isAr ? 'ابدأ التجربة المجانية' : 'Start Free Trial')
-                : (isAr ? 'اشترك الآن' : 'Subscribe Now')
+              : plan.price_usd === 0
+                ? (isAr ? '🎁 مجاني دائماً' : '🎁 Always Free')
+                : plan.trial_days > 0
+                  ? (isAr ? 'ابدأ التجربة المجانية' : 'Start Free Trial')
+                  : (isAr ? 'اشترك الآن' : 'Subscribe Now')
         }
       </button>
     </div>

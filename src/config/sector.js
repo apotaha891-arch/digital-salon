@@ -22,11 +22,12 @@ export const SECTOR = {
 
   // Business info fields shown in setup
   businessFields: [
-    { key: 'name', label_ar: 'اسم الصالون', label_en: 'Salon Name', type: 'text', required: true },
-    { key: 'phone', label_ar: 'رقم الهاتف', label_en: 'Phone Number', type: 'tel', required: true },
-    { key: 'location', label_ar: 'الموقع / العنوان', label_en: 'Location', type: 'text', required: true },
-    { key: 'hours', label_ar: 'ساعات العمل', label_en: 'Working Hours', type: 'text', placeholder: 'مثال: 9 ص - 9 م' },
-    { key: 'instagram', label_ar: 'حساب انستقرام', label_en: 'Instagram', type: 'text', placeholder: '@your_salon' },
+    { key: 'name',    label_ar: 'اسم الصالون (عربي)', label_en: 'Salon Name (Arabic)',  type: 'text', required: true,  placeholder_ar: 'مثال: صالون رضوى',    placeholder_en: 'e.g. صالون رضوى' },
+    { key: 'name_en', label_ar: 'اسم الصالون (إنجليزي) — للرابط', label_en: 'Salon Name (English) — for your link', type: 'text', required: true, placeholder_ar: 'Radwa Salon', placeholder_en: 'Radwa Salon', hint_ar: 'سيصبح رابطك: digitalsalon.website/radwa-salon', hint_en: 'Your link will be: digitalsalon.website/radwa-salon' },
+    { key: 'phone',   label_ar: 'رقم الهاتف',          label_en: 'Phone Number',          type: 'tel',  required: true },
+    { key: 'location',label_ar: 'الموقع / العنوان',    label_en: 'Location',              type: 'text', required: true },
+    { key: 'hours',   label_ar: 'ساعات العمل',          label_en: 'Working Hours',         type: 'text', placeholder: 'مثال: 9 ص - 9 م' },
+    { key: 'instagram',label_ar: 'حساب انستقرام',       label_en: 'Instagram',             type: 'text', placeholder: '@your_salon' },
   ],
 
   // Default services offered (editable by client)

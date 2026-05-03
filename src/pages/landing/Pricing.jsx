@@ -6,9 +6,37 @@ import { Check } from 'lucide-react';
 
 const PLANS = (isAr) => [
   {
+    id: 'free',
+    name: isAr ? 'مجاني' : 'Free',
+    tagline: isAr ? 'ابدأ مجاناً بدون بطاقة ائتمان' : 'Get started for free, no credit card',
+    priceM: '0',
+    priceY: '0',
+    popular: false,
+    color: '#10B981',
+    gradient: 'linear-gradient(135deg, #10B981, #34D399)',
+    emoji: '🎁',
+    features: isAr ? [
+      'قالب صفحة هبوط مخصص للصالون',
+      'رابط صالون جاهز (digitalsalon.website/اسمك)',
+      'ربط حسابات السوشيال ميديا',
+      'ردود تلقائية على الأسئلة الشائعة',
+      'إدارة الحجوزات يدوياً',
+      'إدارة العملاء يدوياً',
+      'تذاكر الدعم',
+    ] : [
+      'Customized landing page template',
+      'Salon link (digitalsalon.website/your-name)',
+      'Social media accounts linking',
+      'Auto replies for common questions',
+      'Manual bookings management',
+      'Manual customer management',
+      'Support tickets',
+    ],
+  },
+  {
     id: 'presence',
     name: isAr ? 'الحضور الرقمي' : 'Digital Presence',
-    tagline: isAr ? 'ابدأ وجودك الرقمي باحترافية' : 'Build your digital presence professionally',
+    tagline: isAr ? 'موقعك الخاص أو تصميم مخصص' : 'Your website or a custom design',
     priceM: '39',
     priceY: '32',
     popular: false,
@@ -16,21 +44,19 @@ const PLANS = (isAr) => [
     gradient: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
     emoji: '🌐',
     features: isAr ? [
-      'صفحة هبوط احترافية للصالون',
-      'ربط حسابات السوشيال ميديا',
-      'واتساب • انستقرام • تيليقرام',
-      'ردود تلقائية على الأسئلة الشائعة',
-      'تحويل العملاء لقنوات التواصل',
+      'كل مميزات الباقة المجانية +',
+      'استخدم موقعك الإلكتروني الخاص',
+      'أو اطلب تصميماً خاصاً احترافياً',
+      'ربط حجوزات فريشا (Fresha)',
       'إدارة الحجوزات يدوياً',
       'إدارة العملاء يدوياً',
       'تذاكر دعم يدوية',
       '14 يوم مجاناً',
     ] : [
-      'Professional salon landing page',
-      'Social media accounts linking',
-      'WhatsApp • Instagram • Telegram',
-      'Auto replies for common questions',
-      'Redirect customers to channels',
+      'Everything in Free +',
+      'Use your own website',
+      'Or request a special custom design',
+      'Fresha booking link integration',
       'Manual bookings management',
       'Manual customer management',
       'Manual support tickets',
@@ -120,7 +146,7 @@ export default function Pricing() {
           {isAr ? 'اختر الباقة المناسبة لصالونك' : 'Choose the right plan for your salon'}
         </h2>
         <p className="ln-section-sub">
-          {isAr ? 'جميع الباقات تشمل 14 يوم تجربة مجانية — لا تحتاج بطاقة ائتمان' : 'All plans include a 14-day free trial — no credit card required'}
+          {isAr ? 'ابدأ مجاناً — الباقات المدفوعة تشمل 14 يوم تجربة بدون بطاقة ائتمان' : 'Start for free — paid plans include a 14-day trial, no credit card required'}
         </p>
 
         {/* Billing toggle */}
@@ -140,7 +166,7 @@ export default function Pricing() {
           )}
         </div>
 
-        <div ref={ref} className="ln-plans-grid ln-plans-grid--3col">
+        <div ref={ref} className="ln-plans-grid ln-plans-grid--4col">
           {plans.map((plan, i) => (
             <div
               key={plan.id}
@@ -189,7 +215,9 @@ export default function Pricing() {
                 style={{ width: '100%', background: plan.gradient, border: 'none', marginTop: 20 }}
                 onClick={() => navigate('/login')}
               >
-                {isAr ? 'ابدأ التجربة المجانية' : 'Start Free Trial'}
+                {plan.id === 'free'
+                  ? (isAr ? 'ابدأ مجاناً' : 'Get Started Free')
+                  : (isAr ? 'ابدأ التجربة المجانية' : 'Start Free Trial')}
               </button>
             </div>
           ))}

@@ -19,7 +19,7 @@ export default function Dashboard() {
 
   const { business, loading: bLoading } = useBusiness(user?.id);
   const { stats, loading: sLoading } = useDashboardStats(user?.id);
-  const { subscription, plans } = useSubscription(user?.id);
+  const { subscription, plans, planId } = useSubscription(user?.id);
   const [showPlans, setShowPlans] = useState(false);
   const [hideBanner, setHideBanner] = useState(false);
 
@@ -49,8 +49,8 @@ export default function Dashboard() {
         plans={plans}
       />
 
-      {/* No Subscription Banner */}
-      {!subscription && !hideBanner && (
+      {/* Free Plan Banner */}
+      {planId === 'free' && !hideBanner && (
         <div style={{
           marginBottom: 20,
           background: 'linear-gradient(135deg, rgba(217,70,239,0.12), rgba(147,51,234,0.08))',
@@ -67,10 +67,10 @@ export default function Dashboard() {
           </div>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontWeight: 800, fontSize: 15 }}>
-              {isAr ? '🎁 أنت على التجربة المجانية' : '🎁 You\'re on the free trial'}
+              {isAr ? '🎁 أنت على الباقة المجانية' : '🎁 You\'re on the Free plan'}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-              {isAr ? 'فعّل باقتك الآن للحصول على جميع المميزات' : 'Activate your plan now for full features'}
+              {isAr ? 'قومي بالترقية للوصول إلى الحجوزات والعملاء والتكاملات' : 'Upgrade to unlock bookings, customers & integrations'}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>

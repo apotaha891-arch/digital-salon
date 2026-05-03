@@ -18,22 +18,26 @@ import {
   Store,
   MessagesSquare,
   BarChart2,
-  Bot
+  Bot,
+  Lock,
 } from 'lucide-react';
 import { signOut } from '../../services/supabase';
 import { SECTOR } from '../../config/sector';
 import { useTheme } from '../../context/ThemeContext';
+import { PLAN_LEVELS } from '../../hooks/useSubscription';
 
-export default function Sidebar({ profile, isAdmin, businessName }) {
+export default function Sidebar({ profile, isAdmin, businessName, planLevel = 0 }) {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const isAr = i18n.language === 'ar';
 
   const clientNav = [
-    { to: '/dashboard',  icon: LayoutDashboard, label: t('common.dashboard') },
-    { to: '/bookings',   icon: CalendarCheck,   label: t('common.bookings') },
-    { to: '/customers',  icon: Users,           label: t('common.customers') },
-    { to: '/tickets',    icon: MessageSquare,   label: t('common.tickets') },
+    { to: '/dashboard',    icon: LayoutDashboard, label: t('common.dashboard') },
+    { to: '/bookings',     icon: CalendarCheck,   label: t('common.bookings') },
+    { to: '/customers',    icon: Users,           label: t('common.customers') },
+    { to: '/tickets',      icon: MessageSquare,   label: t('common.tickets') },
+    { to: '/integrations', icon: Plug,            label: isAr ? 'التكاملات' : 'Integrations', minLevel: 1 },
   ];
 
   const settingsNav = [
@@ -85,17 +89,30 @@ export default function Sidebar({ profile, isAdmin, businessName }) {
           {t('sidebar.main')}
         </div>
 
-        {nav.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/admin' || to === '/dashboard'}
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <Icon size={18} />
-            {label}
-          </NavLink>
-        ))}
+        {nav.map(({ to, icon: Icon, label, minLevel = 0 }) => {
+          const locked = !isAdmin && minLevel > 0 && planLevel < minLevel;
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/admin' || to === '/dashboard'}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              style={locked ? { opacity: 0.65 } : undefined}
+            >
+              {locked ? <Lock size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} /> : <Icon size={18} />}
+              <span style={{ flex: 1 }}>{label}</span>
+              {locked && (
+                <span style={{
+                  fontSize: 9, fontWeight: 900, padding: '2px 7px', borderRadius: 20,
+                  background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                  color: 'white', flexShrink: 0, letterSpacing: 0.3,
+                }}>
+                  {isAr ? 'ترقية' : 'UPGRADE'}
+                </span>
+              )}
+            </NavLink>
+          );
+        })}
 
         {/* Settings section (client only) */}
         {!isAdmin && (

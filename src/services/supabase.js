@@ -21,6 +21,13 @@ export const signUp = async (email, password, fullName) => {
     options: { data: { full_name: fullName } },
   });
   if (error) throw error;
+  // Auto-assign free plan — fail silently so signup never breaks
+  if (data.user) {
+    await supabase.from('subscriptions').upsert(
+      { user_id: data.user.id, plan_id: 'free', status: 'active' },
+      { onConflict: 'user_id' }
+    ).then(() => {}).catch(() => {});
+  }
   return data;
 };
 

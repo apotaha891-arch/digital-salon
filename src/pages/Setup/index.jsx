@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Settings, Save, Loader2, Home, Briefcase, BookOpen, Globe, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useBusiness } from '../../hooks/useBusiness';
 import { useSubscription } from '../../hooks/useSubscription';
 import { useStaff } from '../../hooks/useStaff';
+import { supabase } from '../../services/supabase';
 
 import BusinessTab from './tabs/BusinessTab';
 import ServicesTab from './tabs/ServicesTab';
@@ -20,7 +21,8 @@ export default function Setup() {
   const [activeTab, setActiveTab] = useState('sources');
   const [success, setSuccess] = useState('');
   const [showPlans, setShowPlans] = useState(false);
-  const { subscription, plans } = useSubscription(user?.id);
+  const plansShownOnce = useRef(false);
+  const { subscription, plans, planId } = useSubscription(user?.id);
 
   const TABS = [
     { id: 'business', label: t('setup.tabs.business'), icon: Home },
@@ -46,7 +48,21 @@ export default function Setup() {
       await updateBusiness(localBusiness);
       setSuccess(t('setup.save_success'));
       setTimeout(() => setSuccess(''), 3000);
-      if (!subscription) setShowPlans(true);
+
+      // Ensure free subscription exists (in case signup upsert failed)
+      if (!subscription && user?.id) {
+        await supabase.from('subscriptions').upsert(
+          { user_id: user.id, plan_id: 'free', status: 'active' },
+          { onConflict: 'user_id' }
+        ).then(() => {}).catch(() => {});
+      }
+
+      // Only show upgrade modal once per session, and never for paid plans
+      const isPaidPlan = subscription && subscription.plan_id !== 'free';
+      if (!isPaidPlan && !plansShownOnce.current) {
+        plansShownOnce.current = true;
+        setShowPlans(true);
+      }
     } catch (err) {
       console.error(err);
     }

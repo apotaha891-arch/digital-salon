@@ -38,7 +38,8 @@ const AppRoutes = () => {
   const { user } = useAuth();
   const { i18n } = useTranslation();
   const location = useLocation();
-  const isPublicSalonPage = location.pathname.startsWith('/s/');
+  const isPublicSalonPage = location.pathname.startsWith('/s/') ||
+    /^\/[a-z0-9][a-z0-9-]*$/i.test(location.pathname) && !['login','reset-password','setup','dashboard','bookings','tickets','integrations','billing','customers','help','contact','admin'].some(r => location.pathname === '/' + r || location.pathname.startsWith('/' + r + '/'));
 
   useEffect(() => {
     const dir = i18n.dir();
@@ -75,6 +76,8 @@ const AppRoutes = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/s/:businessId" element={<SalonPublicPage />} />
+      {/* Slug-based public salon URLs: digitalsalon.website/salon-name */}
+      <Route path="/:businessId" element={<SalonPublicPage />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
     </>

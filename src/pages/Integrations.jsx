@@ -1,21 +1,25 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useAgent } from '../hooks/useAgent';
 import { useIntegrations } from '../hooks/useIntegrations';
+import { useSubscription } from '../hooks/useSubscription';
 import Spinner from '../components/ui/Spinner';
+import UpgradeGate from '../components/ui/UpgradeGate';
 import IntegrationsTab from './Setup/tabs/IntegrationsTab';
 import { Plug } from 'lucide-react';
 
 export default function Integrations() {
+  const { i18n } = useTranslation();
   const { user, loading: authLoading } = useAuth();
-  
-  // Use the same hooks we created in Phase 3
+  const { canAccess } = useSubscription(user?.id);
   const { agent, loading: aLoading } = useAgent(user?.id);
   const { activeToolsMap, loading: iLoading, updateIntegration } = useIntegrations(user?.id);
 
   const loading = authLoading || aLoading || iLoading;
 
   if (loading) return <Spinner centered />;
+  if (!canAccess('presence')) return <UpgradeGate minPlan="presence" isAr={i18n.language === 'ar'} />;
 
   return (
     <div className="fade-in">
